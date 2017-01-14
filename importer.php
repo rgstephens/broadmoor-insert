@@ -127,6 +127,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 					do_action('pre_acui_import_single_user', $headers, $data );
 					$data = apply_filters('pre_acui_import_single_user_data', $data, $headers);
 
+					$doing_create = false;
 					$username = $data[0];
 					$email = $data[1];
 					$user_id = 0;
@@ -213,6 +214,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						$created = false;
 					}
 					elseif( email_exists( $email ) && $allow_multiple_accounts == "not_allowed" ){ // if the email is registered, we take the user from this and we don't allow repeated emails
+						$doing_create = true;
+						error_log(print_r("doing_create, duplicate email but we are allowing that", true));
 						if( $update_existing_users == 'no' ){
 							continue;
 						}
@@ -234,6 +237,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						acui_hack_restore_remapped_email_address( $user_id, $email );
 					}
 					else{
+						$doing_create = true;
+						error_log(print_r("doing_create", true));
 						$user_id = wp_create_user( $username, $password, $email );
 					}
 						
@@ -317,12 +322,17 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 									}
 									else
 										update_user_meta( $user_id, $headers[ $i ], $data[ $i ] );
-
-
 								}
-
 							}
 						endfor;
+					}
+
+					if ($doing_create) {
+						error_log(print_r("Invoking mailchimp_user_create for " . $user_id . '/' . $user_object->user_login, true));
+						//do_action('integral_mailchimp_user_create', $user_id);
+					} else {
+						error_log(print_r("Invoking mailchimp_user_update for " . $user_id . '/' . $user_object->user_login, true));
+						//do_action('integral_mailchimp_user_update', $user_id, $user_object);
 					}
 
 					$styles = "";
