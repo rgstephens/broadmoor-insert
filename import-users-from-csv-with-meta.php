@@ -13,6 +13,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 $url_plugin = WP_PLUGIN_URL . '/' . str_replace( basename( __FILE__ ), "", plugin_basename( __FILE__ ) );
 $wp_users_fields = array( "id", "user_nicename", "user_url", "display_name", "nickname", "first_name", "last_name", "description", "jabber", "aim", "yim", "user_registered", "password", "user_pass" );
 $wp_min_fields = array("Username", "Email");
+$show_meta_fields_admin = array("Mobile Phone", "Gender", "ClubTec Account Type", "Title", "Birthday", "Phone (Primary)", "Home Phone", "Work Phone",
+	"Home Address", "Home Address 2", "Home City", "Home State", "Home Zip", "Home Fax",
+	"Company", "Job Title", "Work Address", "Work Address 2", "Work City", "Work Zip", "Work Fax",
+	"ClubTec Login Count", "Family Id", "Groups");
 
 load_plugin_textdomain('import-users-from-csv-with-meta', false, plugin_basename(dirname(__FILE__)). '/languages');
 
@@ -404,9 +408,39 @@ function acui_cron_process(){
 
 function acui_extra_user_profile_fields( $user ) {
 	global $wp_users_fields;
+	global $show_meta_fields_admin;
 	global $wp_min_fields;
+	$map_fieldname_id = array(
+		"Member #" => "member_num",
+		"Mobile Phone" => "mobile",
+		"Gender" => "gender",
+		"ClubTec Account Type" => "acct_type",  // missing
+		"Title" => "title",
+		"Birthday" => "birthday",
+		"Phone (Primary)" => "phone",
+		"Home Phone" => "home_phone",
+		"Work Phone" => "work_phone",
+		"Home Address" => "home_addr",
+		"Home Address 2" => "home_addr2",
+		"Home City" => "home_city",
+		"Home State" => "home_state",
+		"Home Zip" => "home_zip",
+		"Home Fax" => "home_fax",
+		"Company" => "company",
+		"Job Title" => "job_title",
+		"Work Address" => "work_addr",
+		"Work Address 2" => "work_addr2",
+		"Work City" => "work_city",
+		"Work State" => "work_state",
+		"Work Zip" => "work_zip",
+		"Work Fax" => "work_fax",
+		"ClubTec Login Count" => "login_count",
+		"Family Id" => "family_id",
+		"Groups" => "groups");
 
 	$headers = get_option("acui_columns");
+	//error_log(print_r("acui_extra_user_profile_fields, headers 2: " . $headers, true));
+	//error_log(print_r($headers, true));
 	if( is_array($headers) && !empty($headers) ):
 ?>
 	<h3>Extra profile information</h3>
@@ -414,12 +448,18 @@ function acui_extra_user_profile_fields( $user ) {
 	<table class="form-table"><?php
 
 	foreach ($headers as $column):
-		if(in_array($column, $wp_min_fields) || in_array($column, $wp_users_fields))
+		//error_log(print_r("acui_extra_user_profile_fields, $column: " . $column, true));
+		//if(in_array($column, $wp_min_fields) || in_array($column, $wp_users_fields))
+		//if(in_array($column, $wp_min_fields) || in_array($column, $show_meta_fields_admin))
+		if(in_array($column, $wp_min_fields))
+		{
 			continue;
+		}
+		//error_log(print_r("$column get_the_author_meta: " . get_the_author_meta($column, $user->ID ), true));
 	?>
 		<tr>
-			<th><label for="<?php echo $column; ?>"><?php echo $column; ?></label></th>
-			<td><input type="text" name="<?php echo $column; ?>" id="<?php echo $column; ?>" value="<?php echo esc_attr(get_the_author_meta($column, $user->ID )); ?>" class="regular-text" /></td>
+			<th><label for="<?php echo $map_fieldname_id[$column]; ?>"><?php echo $column; ?></label></th>
+			<td><input type="text" name="<?php echo $map_fieldname_id[$column]; ?>" id="<?php echo $map_fieldname_id[$column]; ?>" value="<?php echo esc_attr(get_the_author_meta($column, $user->ID )); ?>" class="regular-text" /></td>
 		</tr>
 		<?php
 	endforeach;
@@ -430,6 +470,7 @@ function acui_extra_user_profile_fields( $user ) {
 
 function acui_save_extra_user_profile_fields( $user_id ){
 	global $wp_users_fields;
+	global $show_meta_fields_admin;
 	global $wp_min_fields;
 	$headers = get_option("acui_columns");
 
@@ -448,6 +489,7 @@ function acui_save_extra_user_profile_fields( $user_id ){
 
 function acui_modify_user_edit_admin(){
 	global $pagenow;
+	//error_log(print_r("acui_modify_user_edit_admin, pagenow: " . $pagenow, true));
 
 	if(in_array($pagenow, array("user-edit.php", "profile.php"))){
     	$acui_columns = get_option("acui_columns");
@@ -498,7 +540,8 @@ function acui_modify_user_edit_admin(){
             	
             	array_push($new_columns, $column);
         	}
-        	
+
+			//error_log(print_r("calling update_option ***************** ", true));
         	update_option("acui_columns", $new_columns);
  		}
  	}
