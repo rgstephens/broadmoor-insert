@@ -6,18 +6,34 @@ function clean_string($value) {
 	return str_replace('.', '', str_replace('-', '', str_replace('\'', '', str_replace(' ', '', $value))));
 }
 
+function composeUsername($data) {
+	$fullname = $data[1][0] . $data[2];
+	//error_log(print_r("composeUsername: " . $data[1] . " data[2]: " . $data[2] . ", fullname: " . $data[1][0] . $data[2], true));
+	return $fullname;
+}
+
 function grab_email($data) {
-	if ($data[11]) {
+	if ($data[16]) {
+		return $data[16];
+	} elseif ($data[26]) {
+		return $data[26];
+	} elseif ($data[32]) {
+		return $data[32];
+	} else {
+		return false;
+	}
+/*	if ($data[11]) {
 		return $data[11];
 	} elseif ($data[12]) {
 		return $data[12];
 	} else {
 		return false;
-	}
+	}*/
 }
 
 function type_to_role($clubtec_type) {
 	$tokens = explode(" ", $clubtec_type);
+	//error_log(print_r("type_to_role: " . $clubtec_type . " token: " . $tokens[0], true));
 	switch ($tokens[0]) {
 		case '30-34':
 		case '35':
@@ -49,6 +65,7 @@ function type_to_role($clubtec_type) {
 
 function type_to_type($clubtec_type) {
 	$tokens = explode(" ", $clubtec_type);
+	error_log(print_r("type_to_type: " . $clubtec_type . " token: " . $tokens[0], true));
 	switch ($tokens[0]) {
 		case '30-34':
 		case '35':
@@ -99,32 +116,32 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			global $wp_users_fields;
 			global $wp_min_fields;
 		$map_broadmoor_fields = array(
-			"usr_account_id" => "Member #",
-			"usr_cell_phone" => "Mobile Phone",
-			"usr_gender" => "Gender",
-			"account_type" => "ClubTec Account Type",  // missing
-			"usr_title" => "Title",
-			"usr_birthday" => "Birthday",
-			"usr_phone" => "Phone (Primary)",
-			"usr_home_phone" => "Home Phone",
-			"usr_phone_a" => "Work Phone",
-			"usr_address" => "Home Address",
-			"usr_address2" => "Home Address 2",
-			"usr_city" => "Home City",
-			"usr_state" => "Home State",
-			"usr_zip" => "Home Zip",
-			"usr_fax" => "Home Fax",
-			"usr_company" => "Company",
+			"MemberNumber" => "Member #",
+			"MobilePhone" => "Mobile Phone",
+			"Gender" => "Gender",
+			"TypeDesc" => "ClubTec Account Type",  // missing
+			"Title" => "Title",
+			"Birthdate" => "Birthday",
+			"HomePhone" => "Home Phone",
+			"BusinessPhone" => "Work Phone",
+			"HomeAddress1" => "Home Address",
+			"HomeAddress2" => "Home Address 2",
+			"HomeCity" => "Home City",
+			"HomeState" => "Home State",
+			"HomeZip" => "Home Zip",
+			"HomeFax" => "Home Fax",
+			"BusinessCompany" => "Company",
 			"usr_jobtitle" => "Job Title",
-			"usr_address_a" => "Work Address",
-			"usr_address2_a" => "Work Address 2",
-			"usr_city_a" => "Work City",
-			"usr_state_a" => "Work State",
-			"usr_zip_a" => "Work Zip",
-			"usr_fax_a" => "Work Fax",
-			"usr_logon_count" => "ClubTec Login Count",
-			"usr_family_id" => "Family Id",
-			"grp_name" => "Groups");
+			"BusinessAddress1" => "Work Address",
+			"BusinessAddress2" => "Work Address 2",
+			"BusinessCity" => "Work City",
+			"BusinessState" => "Work State",
+			"BusinessZip" => "Work Zip",
+			"BusinessFax" => "Work Fax"
+			//"usr_logon_count" => "ClubTec Login Count",
+			//"usr_family_id" => "Family Id",
+			//"grp_name" => "Groups"
+		);
 
 			if( is_plugin_active( 'wp-access-areas/wp-access-areas.php' ) ){
 				$wpaa_labels = WPAA_AccessArea::get_available_userlabels(); 
@@ -146,7 +163,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 				}
 			}
 
-			$broadmoor_users_fields = array( "usr_login", "usr_email", "account_type", "usr_firstname", "usr_lastname" );
+			//$broadmoor_users_fields = array( "usr_login", "usr_email", "account_type", "usr_firstname", "usr_lastname" );
+			$broadmoor_users_fields = array("HomeEmail", "TypeDesc", "FirstName", "LastName" );
 			$users_registered = array();
 			$headers = array();
 			$headers_filtered = array();
@@ -250,8 +268,10 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 					$data = apply_filters('pre_acui_import_single_user_data', $data, $headers);
 
 					$doing_create = false;
-					$username = $data[5];  // usr_login from ClubTec export
+					$username = composeUsername($data);  // usr_login from ClubTec export
 					$email = grab_email($data);  // check $data[11] & $data[12]
+					error_log(print_r("=========================================", true));
+					error_log(print_r("username: " . $username . ", email: " . $email, true));
 					$user_id = 0;
 					$problematic_row = false;
 					$password_position = $positions["password"];
@@ -309,6 +329,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 							    'user_pass'   =>  $password
 							);
 
+							error_log(print_r("calling wp_insert_user: ", true));
+							error_log(print_r($userdata, true));
 							$user_id = wp_insert_user( $userdata );
 
 							$created = true;
@@ -359,8 +381,12 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						acui_hack_restore_remapped_email_address( $user_id, $email );
 					}
 					else{
+						//*********************************************
+						// This is where the new user create happens
+						//*********************************************
 						$doing_create = true;
-						//error_log(print_r("doing_create", true));
+						$email = grab_email($data);
+						//error_log(print_r("wp_create_user, username: " . $username . ", email: " . $email, true));
 						$user_id = wp_create_user( $username, $password, $email );
 					}
 						
@@ -405,7 +431,10 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						update_user_meta( $user_id, "pending", true );
 						
 					if($columns > 2){
-						for( $i=2 ; $i<$columns; $i++ ):
+						//*********************************************
+						// Walk the columns of each row
+						//*********************************************
+						for( $i=0 ; $i<$columns; $i++ ):
 							if( !empty( $data ) ){
 								if( strtolower( $headers[ $i ] ) == "password" ){ // passwords -> continue
 									continue;
@@ -413,17 +442,57 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 								elseif( strtolower( $headers[ $i ] ) == "user_pass" ){ // hashed pass
 							        $wpdb->update( $wpdb->users, array( 'user_pass' => $data[ $i ] ), array( 'ID' => $user_id ) );
 								}
-								elseif( in_array( $headers[ $i ], $wp_users_fields ) ){ // wp_user data									
+								elseif( in_array( $headers[ $i ], $wp_users_fields ) ){ // wp_user data
 									if( empty( $data[ $i ] ) && $empty_cell_action == "leave" )
 										continue;
 									else
-										wp_update_user( array( 'ID' => $user_id, $headers[ $i ] => $data[ $i ] ) );									
+										//$wp_users_fields = array( "id", "user_nicename", "user_url", "display_name", "nickname", "first_name", "last_name", "description", "jabber", "aim", "yim", "user_registered", "password", "user_pass" );
+										//****************************************************************
+										// Is this a user data field (not a user meta field), handle here
+										//****************************************************************
+										error_log(print_r("wp_update_user: " . $headers[$i] . " => ". $data[$i], true));
+										wp_update_user( array( 'ID' => $user_id, $headers[$i] => $data[$i] ) );
 								}
+								// $broadmoor_users_fields = array("HomeEmail", "TypeDesc", "FirstName", "LastName" );
 								elseif( in_array( $headers[ $i ], $broadmoor_users_fields ) ){ // wp_user data
 									if( empty( $data[ $i ] ) && $empty_cell_action == "leave" )
 										continue;
 									else
+										//*****************************************************
+										// Process user meta column (non meta is handled above)
+										//*****************************************************
+										//error_log(print_r(">> user_fields switch: " . $headers[$i] . ", value: " . $data[$i], true));
 										switch ( $headers[ $i ] ){
+											case 'TypeDesc':
+												$wp_role = type_to_role($data[ $i ]);
+												//error_log(print_r("setting roles to  " . $wp_role, true));
+												wp_update_user( array( 'ID' => $user_id, 'role' => $wp_role) );
+												update_user_meta( $user_id, "role", strtolower($wp_role) );
+												update_user_meta($user_id, "ClubTec Account Type", $data[$i]);
+												break;
+											case 'FirstName':
+												$nickname = $data[$i][0] . $data[$i + 1];
+												$displayname = $data[ $i ] . ' ' . $data[$i + 1];
+												//error_log(print_r("FirstName #1 " . $data[$i] . ", nickname: " . $nickname . ", display_name: " . $displayname . ", composeUsername: " . composeUsername($data), true));
+												wp_update_user( array( 'ID' => $user_id, 'first_name' => $data[ $i ] ) );
+												wp_update_user( array( 'ID' => $user_id, 'display_name' => $data[ $i ] . ' ' . $data[$i + 1] ) );
+												wp_update_user( array( 'ID' => $user_id, 'nickname' => $data[ $i ][0] . $data[$i + 1] ) );
+												wp_update_user( array( 'ID' => $user_id, 'user_login' => composeUsername($data) ) );
+												break;
+											case 'LastName':
+												//error_log(print_r("LastName: " . $data[ $i ], true ));
+												wp_update_user( array( 'ID' => $user_id, 'last_name' => $data[ $i ] ) );
+												$nickname = $data[$i-1][0] . $data[$i];
+												$displayname = $data[ $i-1 ] . ' ' . $data[$i];
+												//error_log(print_r("FirstName #2 " . $data[$i-1] . ", nickname: " . $nickname . ", display_name: " . $displayname . ", composeUsername: " . composeUsername($data), true));
+												wp_update_user( array( 'ID' => $user_id, 'first_name' => $data[ $i-1 ] ) );
+												wp_update_user( array( 'ID' => $user_id, 'display_name' => $displayname ) );
+												wp_update_user( array( 'ID' => $user_id, 'nickname' => $nickname ) );
+												wp_update_user( array( 'ID' => $user_id, 'user_login' => composeUsername($data) ) );
+												break;
+											case 'HomeEmail':
+												wp_update_user( array( 'ID' => $user_id, 'user_email' => grab_email($data) ) );
+												break;
 											case 'account_type':
 												$wp_role = type_to_role($data[ $i ]);
 												wp_update_user( array( 'ID' => $user_id, 'role' => $wp_role) );
@@ -469,77 +538,97 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 										else
 											continue;	
 									} else {
-										//error_log(print_r("Processing header " . $headers[$i] . ', data: ' . $data[$i], true));
+										//error_log(print_r(">> Misc fields " . $headers[$i] . ', data: ' . $data[$i], true));
 										switch ($headers[$i]) {
-											case "usr_account_id":
+											case "MemberNumber":
+											    //error_log(print_r("MemberNumber " . $data[$i], true));
 												update_user_meta($user_id, "Member #", $data[$i]);
 												break;
-											case "usr_title":
+											case "Gender":
+												$gender = 'male';
+												$genderCaps = 'Male';
+												$genderEnum = '"a:1:{i:0;s:4:"Male";}"';
+												if ($data[$i] == 'F') {
+													$gender = 'female';
+													$genderCaps = 'Female';
+													$genderEnum = 'a:1:{i:0;s:6:"Female";}';
+												}
+												error_log(print_r("Gender " . $data[$i] . " convert to: " . $genderCaps, true));
+												update_user_meta($user_id, "gender", $genderCaps);
+												//update_user_meta($user_id, "Gender", $gender);
+												break;
+											case "Title":
 												update_user_meta($user_id, "Title", $data[$i]);
 												break;
-											case "usr_birthday":
+											case "Birthdate":
 												update_user_meta($user_id, "Birthday", $data[$i]);
 												break;
-											case "usr_phone":
-												update_user_meta($user_id, "Phone (Primary)", $data[$i]);
-												break;
-											case "usr_home_phone":
+											case "HomePhone":
 												update_user_meta($user_id, "Home Phone", $data[$i]);
 												break;
 											case "usr_cell_phone":
+											case "MobilePhone":
 												update_user_meta($user_id, "Mobile Phone", $data[$i]);
 												break;
 											case "usr_fax":
+											case "HomeFax":
 												update_user_meta($user_id, "Home Fax", $data[$i]);
 												break;
 											case "usr_company":
+											case "BusinessCompany":
 												update_user_meta($user_id, "Company", $data[$i]);
 												break;
 											case "usr_jobtitle":
+											case "Occupation":
 												update_user_meta($user_id, "Job Title", $data[$i]);
 												break;
 											case "usr_address":
+											case "HomeAddress1":
 												update_user_meta($user_id, "Home Address", $data[$i]);
 												break;
 											case "usr_address2":
+											case "HomeAddress2":
 												update_user_meta($user_id, "Home Address 2", $data[$i]);
 												break;
 											case "usr_state":
+											case "HomeState":
 												update_user_meta($user_id, "Home State", $data[$i]);
 												break;
 											case "usr_city":
+											case "HomeCity":
 												update_user_meta($user_id, "Home City", $data[$i]);
 												break;
 											case "usr_zip":
+											case "HomeZip":
 												update_user_meta($user_id, "Home Zip", $data[$i]);
 												break;
 											case "usr_address_a":
+											case "BusinessAddress1":
 												update_user_meta($user_id, "Work Address", $data[$i]);
 												break;
 											case "usr_address2_a":
+											case "BusinessAddress2":
 												update_user_meta($user_id, "Work Address 2", $data[$i]);
 												break;
 											case "usr_state_a":
+											case "BusinessState":
 												update_user_meta($user_id, "Work State", $data[$i]);
 												break;
 											case "usr_city_a":
+											case "BusinessCity":
 												update_user_meta($user_id, "Work City", $data[$i]);
 												break;
 											case "usr_zip_a":
+											case "BusinessZip":
 												update_user_meta($user_id, "Work Zip", $data[$i]);
 												break;
 											case "usr_phone_a":
+											case "BusinessPhone":
 												update_user_meta($user_id, "Work Phone", $data[$i]);
 												break;
 											case "usr_fax_a":
+											case "BusinessFax":
 												update_user_meta($user_id, "Work Fax", $data[$i]);
-												break;
-											case "usr_gender":
-												$gender = 'Male';
-												if ($data[$i] == 'F') {
-													$gender = 'Female';
-												}
-												update_user_meta($user_id, "gender", $gender);
 												break;
 											case "usr_logon_count":
 												update_user_meta($user_id, "ClubTec Login Count", $data[$i]);
