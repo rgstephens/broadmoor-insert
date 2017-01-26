@@ -9,14 +9,20 @@ Author URI: http://codection.com
 */
 
 if ( ! defined( 'ABSPATH' ) ) exit; 
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 $url_plugin = WP_PLUGIN_URL . '/' . str_replace( basename( __FILE__ ), "", plugin_basename( __FILE__ ) );
 $wp_users_fields = array( "id", "user_nicename", "user_url", "display_name", "nickname", "first_name", "last_name", "description", "jabber", "aim", "yim", "user_registered", "password", "user_pass" );
-$wp_min_fields = array("Username", "Email");
-$show_meta_fields_admin = array("Mobile Phone", "Gender", "ClubTec Account Type", "Title", "Birthday", "Phone (Primary)", "Home Phone", "Work Phone",
+$wp_min_fields = array("Username", "Email", "opt_in_bgc", "opt_in_bha");
+$show_meta_fields_admin = array("mobile_phone", "gender", "clubtec_account_type", "title", "birthday", "home_phone", "work_phone",
+	"home_address", "home_address_2", "home_city", "home_state", "home_aip", "home_fax",
+	"company", "job_title", "work_address", "work_address_2", "work_city", "work_aip", "work_fax",
+	"clubtec_login_count", "family_id", "groups", "opt_in_bgc", "opt_in_bha");
+$checkbox_fields = array("opt_in_bgc", "opt_in_bha", "all_golf_club", "men_golfing", "women_golfing", "under_40", "junior", "adv_intermediate", "all_homeowner", "employee", "guest");
+/*$show_meta_fields_admin = array("Mobile Phone", "Gender", "ClubTec Account Type", "Title", "Birthday", "Phone (Primary)", "Home Phone", "Work Phone",
 	"Home Address", "Home Address 2", "Home City", "Home State", "Home Zip", "Home Fax",
 	"Company", "Job Title", "Work Address", "Work Address 2", "Work City", "Work Zip", "Work Fax",
-	"ClubTec Login Count", "Family Id", "Groups");
+	"ClubTec Login Count", "Family Id", "Groups");*/
 
 load_plugin_textdomain('import-users-from-csv-with-meta', false, plugin_basename(dirname(__FILE__)). '/languages');
 
@@ -411,7 +417,7 @@ function acui_extra_user_profile_fields( $user ) {
 	global $show_meta_fields_admin;
 	global $wp_min_fields;
 	$map_fieldname_id = array(
-		"Member #" => "member_num",
+		"Member #" => "membership_number",
 		"Mobile Phone" => "mobile",
 		"Gender" => "gender",
 		"ClubTec Account Type" => "acct_type",  // missing
@@ -458,8 +464,8 @@ function acui_extra_user_profile_fields( $user ) {
 		//error_log(print_r("$column get_the_author_meta: " . get_the_author_meta($column, $user->ID ), true));
 	?>
 		<tr>
-			<th><label for="<?php echo $map_fieldname_id[$column]; ?>"><?php echo $column; ?></label></th>
-			<td><input type="text" name="<?php echo $map_fieldname_id[$column]; ?>" id="<?php echo $map_fieldname_id[$column]; ?>" value="<?php echo esc_attr(get_the_author_meta($column, $user->ID )); ?>" class="regular-text" /></td>
+			<th><label for="<?php echo $column; ?>"><?php echo $column; ?></label></th>
+			<td><input type="<?php if (esc_attr(get_the_author_meta($column, $user->ID )) == 'true' || esc_attr(get_the_author_meta($column, $user->ID )) == 'false') { echo 'checkbox'; }  else { echo 'text'; } ?>" name="<?php echo $column; ?>" id="<?php echo $column; ?>" <?php if (esc_attr(get_the_author_meta($column, $user->ID )) == 'true') { echo 'checked="' . esc_attr(get_the_author_meta($column, $user->ID )) . '"'; } else if (esc_attr(get_the_author_meta($column, $user->ID )) == 'false') { echo ''; } else echo 'value="' . esc_attr(get_the_author_meta($column, $user->ID )) . '"'; ?> class="regular-text" /></td>
 		</tr>
 		<?php
 	endforeach;
@@ -472,6 +478,7 @@ function acui_save_extra_user_profile_fields( $user_id ){
 	global $wp_users_fields;
 	global $show_meta_fields_admin;
 	global $wp_min_fields;
+	global $checkbox_fields;
 	$headers = get_option("acui_columns");
 
 	$post_filtered = filter_input_array( INPUT_POST );
@@ -482,7 +489,16 @@ function acui_save_extra_user_profile_fields( $user_id ){
 				continue;
 
 			$column_sanitized = str_replace(" ", "_", $column);
-			update_user_meta( $user_id, $column, $post_filtered[$column_sanitized] );
+			if (!in_array($column, $checkbox_fields)) {
+				update_user_meta( $user_id, $column, $post_filtered[$column_sanitized] );
+			} else {
+				//error_log(print_r("saving, column: " . $column . ", value: " . $post_filtered[$column_sanitized], true));
+				if (array_key_exists($column_sanitized, $post_filtered)) {
+					update_user_meta( $user_id, $column, 'true' );
+				} else {
+					update_user_meta( $user_id, $column, 'false' );
+				}
+			}
 		}
 	endif;
 }

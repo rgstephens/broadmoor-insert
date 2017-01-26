@@ -7,18 +7,18 @@ function clean_string($value) {
 }
 
 function composeUsername($data) {
-	$fullname = $data[1][0] . $data[2];
+	$fullname = $data[2][0] . $data[3];
 	//error_log(print_r("composeUsername: " . $data[1] . " data[2]: " . $data[2] . ", fullname: " . $data[1][0] . $data[2], true));
 	return $fullname;
 }
 
 function grab_email($data) {
-	if ($data[16]) {
-		return $data[16];
-	} elseif ($data[26]) {
-		return $data[26];
-	} elseif ($data[32]) {
-		return $data[32];
+	if ($data[17]) {
+		return $data[17];
+	} elseif ($data[27]) {
+		return $data[27];
+	} elseif ($data[33]) {
+		return $data[33];
 	} else {
 		return false;
 	}
@@ -103,6 +103,88 @@ function type_to_type($clubtec_type) {
 	}
 }
 
+function type_to_list($user_id, $clubtec_type, $gender) {
+	$tokens = explode(" ", $clubtec_type);
+	error_log(print_r("type_to_list: " . $clubtec_type . " token: " . $tokens[0] . ", gender: " . $gender, true));
+	switch ($tokens[0]) {
+		case '30-34':
+		case '35':
+		case 'Under':
+			if ($gender == 'F') {
+				update_user_meta($user_id, "men_golfing", "false");
+				update_user_meta($user_id, "women_golfing", "true");
+			} else {
+				update_user_meta($user_id, "men_golfing", "true");
+				update_user_meta($user_id, "women_golfing", "false");
+			}
+		update_user_meta($user_id, "all_homeowner", "false");
+		update_user_meta($user_id, "all_golf_club", "true");
+		update_user_meta($user_id, "employee", "false");
+		update_user_meta($user_id, "under_40", "true");
+		update_user_meta($user_id, "guest", "false");
+		update_user_meta($user_id, "junior", "false");
+		update_user_meta($user_id, "adv_intermediate", "false");
+		update_user_meta($user_id, "opt_in_bha", "false");
+		update_user_meta($user_id, "opt_in_bgc", "true");
+		case 'Honorary':
+		case 'Lifetime':
+		case 'Social':
+		case 'Adv':
+		case 'Adv.':
+		case 'Men':
+		case 'New':
+		case 'Senior':
+		case 'W.':
+		case 'Women':
+		if ($gender == 'F') {
+			update_user_meta($user_id, "men_golfing", "false");
+			update_user_meta($user_id, "women_golfing", "true");
+		} else {
+			update_user_meta($user_id, "men_golfing", "true");
+			update_user_meta($user_id, "women_golfing", "false");
+		}
+		    update_user_meta($user_id, "all_golf_club", "true");
+		update_user_meta($user_id, "all_homeowner", "false");
+			update_user_meta($user_id, "employee", "false");
+			update_user_meta($user_id, "under_40", "false");
+			update_user_meta($user_id, "guest", "false");
+			update_user_meta($user_id, "junior", "false");
+			update_user_meta($user_id, "adv_intermediate", "false");
+			update_user_meta($user_id, "opt_in_bha", "false");
+			update_user_meta($user_id, "opt_in_bgc", "true");
+			break;
+		case 'Employee':
+			update_user_meta($user_id, "men_golfing", "true");
+			update_user_meta($user_id, "women_golfing", "true");
+			update_user_meta($user_id, "all_golf_club", "false");
+			update_user_meta($user_id, "all_homeowner", "false");
+			update_user_meta($user_id, "employee", "true");
+			update_user_meta($user_id, "under_40", "false");
+			update_user_meta($user_id, "guest", "false");
+			update_user_meta($user_id, "junior", "false");
+			update_user_meta($user_id, "adv_intermediate", "false");
+			update_user_meta($user_id, "opt_in_bha", "false");
+			update_user_meta($user_id, "opt_in_bgc", "false");
+			break;
+		case 'Homeowner':
+		case 'Non-Resident':
+		case 'Non-Owner':
+		case 'Renters':
+			update_user_meta($user_id, "men_golfing", "false");
+			update_user_meta($user_id, "women_golfing", "false");
+			update_user_meta($user_id, "all_golf_club", "false");
+			update_user_meta($user_id, "all_homeowner", "true");
+			update_user_meta($user_id, "employee", "false");
+			update_user_meta($user_id, "under_40", "false");
+			update_user_meta($user_id, "guest", "false");
+			update_user_meta($user_id, "junior", "false");
+			update_user_meta($user_id, "adv_intermediate", "false");
+			update_user_meta($user_id, "opt_in_bha", "true");
+			update_user_meta($user_id, "opt_in_bgc", "false");
+			break;
+	}
+}
+
 
 function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false ){?>
 	<div class="wrap">
@@ -116,28 +198,28 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			global $wp_users_fields;
 			global $wp_min_fields;
 		$map_broadmoor_fields = array(
-			"MemberNumber" => "Member #",
-			"MobilePhone" => "Mobile Phone",
-			"Gender" => "Gender",
-			"TypeDesc" => "ClubTec Account Type",  // missing
-			"Title" => "Title",
-			"Birthdate" => "Birthday",
-			"HomePhone" => "Home Phone",
-			"BusinessPhone" => "Work Phone",
-			"HomeAddress1" => "Home Address",
-			"HomeAddress2" => "Home Address 2",
-			"HomeCity" => "Home City",
-			"HomeState" => "Home State",
-			"HomeZip" => "Home Zip",
-			"HomeFax" => "Home Fax",
-			"BusinessCompany" => "Company",
-			"usr_jobtitle" => "Job Title",
-			"BusinessAddress1" => "Work Address",
-			"BusinessAddress2" => "Work Address 2",
-			"BusinessCity" => "Work City",
-			"BusinessState" => "Work State",
-			"BusinessZip" => "Work Zip",
-			"BusinessFax" => "Work Fax"
+			"MemberNumber" => "membership_number",
+			"MobilePhone" => "mobile_phone",
+			"Gender" => "gender",
+			"TypeDesc" => "clubtec_account_type",  // missing
+			"Title" => "title",
+			"Birthdate" => "birthday",
+			"HomePhone" => "home_phone",
+			"BusinessPhone" => "work_phone",
+			"HomeAddress1" => "home_address",
+			"HomeAddress2" => "home_address_2",
+			"HomeCity" => "home_city",
+			"HomeState" => "home_state",
+			"HomeZip" => "home_zip",
+			"HomeFax" => "home_fax",
+			"BusinessCompany" => "company",
+			"usr_jobtitle" => "job_title",
+			"BusinessAddress1" => "work_address",
+			"BusinessAddress2" => "work_address_2",
+			"BusinessCity" => "work_city",
+			"BusinessState" => "work_state",
+			"BusinessZip" => "work_zip",
+			"BusinessFax" => "work_fax"
 			//"usr_logon_count" => "ClubTec Login Count",
 			//"usr_family_id" => "Family Id",
 			//"grp_name" => "Groups"
@@ -246,11 +328,22 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 
 						$i++;
 					}
+		$headers_filtered[] = 'opt_in_bgc';
+		$headers_filtered[] = 'opt_in_bha';
+		$headers_filtered[] = 'all_golf_club';
+		$headers_filtered[] = 'men_golfing';
+		$headers_filtered[] = 'women_golfing';
+		$headers_filtered[] = 'under_40';
+		$headers_filtered[] = 'junior';
+		$headers_filtered[] = 'adv_intermediate';
+		$headers_filtered[] = 'all_homeowner';
+		$headers_filtered[] = 'employee';
+		$headers_filtered[] = 'guest';
 
 					$columns = count( $data );
 
-		//error_log(print_r("calling acui_columns: ", true));
-		//error_log(print_r($headers_filtered));
+		error_log(print_r("calling acui_columns: ", true));
+		error_log(print_r($headers_filtered, true));
 					update_option( "acui_columns", $headers_filtered );
 					?>
 					<h3><?php _e( 'Inserting and updating data', 'import-users-from-csv-with-meta' ); ?></h3>
@@ -389,7 +482,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						//error_log(print_r("wp_create_user, username: " . $username . ", email: " . $email, true));
 						$user_id = wp_create_user( $username, $password, $email );
 					}
-						
+
 					if( is_wp_error( $user_id ) ){ // in case the user is generating errors after this checks
 						$error_string = $user_id->get_error_message();
 						echo '<script>alert("' . __( 'Problems with user:', 'import-users-from-csv-with-meta' ) . $username . __( ', we are going to skip. \r\nError: ', 'import-users-from-csv-with-meta') . $error_string . '");</script>';
@@ -465,10 +558,11 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 										switch ( $headers[ $i ] ){
 											case 'TypeDesc':
 												$wp_role = type_to_role($data[ $i ]);
+												type_to_list($user_id, $data[$i], $data[31]);
 												//error_log(print_r("setting roles to  " . $wp_role, true));
 												wp_update_user( array( 'ID' => $user_id, 'role' => $wp_role) );
 												update_user_meta( $user_id, "role", strtolower($wp_role) );
-												update_user_meta($user_id, "ClubTec Account Type", $data[$i]);
+												update_user_meta($user_id, "clubtec_account_type", $data[$i]);
 												break;
 											case 'FirstName':
 												$nickname = $data[$i][0] . $data[$i + 1];
@@ -497,7 +591,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												$wp_role = type_to_role($data[ $i ]);
 												wp_update_user( array( 'ID' => $user_id, 'role' => $wp_role) );
 												update_user_meta( $user_id, "role", strtolower($wp_role) );
-												update_user_meta($user_id, "ClubTec Account Type", $data[$i]);
+												update_user_meta($user_id, "clubtec_account_type", $data[$i]);
 												break;
 											case 'usr_email':
 												wp_update_user( array( 'ID' => $user_id, 'user_email' => grab_email($data) ) );
@@ -542,7 +636,9 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 										switch ($headers[$i]) {
 											case "MemberNumber":
 											    //error_log(print_r("MemberNumber " . $data[$i], true));
-												update_user_meta($user_id, "Member #", $data[$i]);
+												//update_user_meta($user_id, "Membership Number", $data[$i]);
+												update_user_meta($user_id, "membership_number", $data[$i]);
+												update_user_meta($user_id, "show_admin_bar_front", "false");
 												break;
 											case "Gender":
 												$gender = 'male';
@@ -555,92 +651,92 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												}
 												error_log(print_r("Gender " . $data[$i] . " convert to: " . $genderCaps, true));
 												update_user_meta($user_id, "gender", $genderCaps);
-												//update_user_meta($user_id, "Gender", $gender);
+												//update_user_meta($user_id, "Gender", $genderCaps);
 												break;
 											case "Title":
-												update_user_meta($user_id, "Title", $data[$i]);
+												update_user_meta($user_id, "title", $data[$i]);
 												break;
 											case "Birthdate":
-												update_user_meta($user_id, "Birthday", $data[$i]);
+												update_user_meta($user_id, "birthday", $data[$i]);
 												break;
 											case "HomePhone":
-												update_user_meta($user_id, "Home Phone", $data[$i]);
+												update_user_meta($user_id, "home_phone", $data[$i]);
 												break;
 											case "usr_cell_phone":
 											case "MobilePhone":
-												update_user_meta($user_id, "Mobile Phone", $data[$i]);
+												update_user_meta($user_id, "mobile_phone", $data[$i]);
 												break;
 											case "usr_fax":
 											case "HomeFax":
-												update_user_meta($user_id, "Home Fax", $data[$i]);
+												update_user_meta($user_id, "home_fax", $data[$i]);
 												break;
 											case "usr_company":
 											case "BusinessCompany":
-												update_user_meta($user_id, "Company", $data[$i]);
+												update_user_meta($user_id, "company", $data[$i]);
 												break;
 											case "usr_jobtitle":
 											case "Occupation":
-												update_user_meta($user_id, "Job Title", $data[$i]);
+												update_user_meta($user_id, "job_title", $data[$i]);
 												break;
 											case "usr_address":
 											case "HomeAddress1":
-												update_user_meta($user_id, "Home Address", $data[$i]);
+												update_user_meta($user_id, "home_address", $data[$i]);
 												break;
 											case "usr_address2":
 											case "HomeAddress2":
-												update_user_meta($user_id, "Home Address 2", $data[$i]);
+												update_user_meta($user_id, "home_address_2", $data[$i]);
 												break;
 											case "usr_state":
 											case "HomeState":
-												update_user_meta($user_id, "Home State", $data[$i]);
+												update_user_meta($user_id, "home_state", $data[$i]);
 												break;
 											case "usr_city":
 											case "HomeCity":
-												update_user_meta($user_id, "Home City", $data[$i]);
+												update_user_meta($user_id, "home_city", $data[$i]);
 												break;
 											case "usr_zip":
 											case "HomeZip":
-												update_user_meta($user_id, "Home Zip", $data[$i]);
+												update_user_meta($user_id, "home_zip", $data[$i]);
 												break;
 											case "usr_address_a":
 											case "BusinessAddress1":
-												update_user_meta($user_id, "Work Address", $data[$i]);
+												update_user_meta($user_id, "work_Address", $data[$i]);
 												break;
 											case "usr_address2_a":
 											case "BusinessAddress2":
-												update_user_meta($user_id, "Work Address 2", $data[$i]);
+												update_user_meta($user_id, "work_Address 2", $data[$i]);
 												break;
 											case "usr_state_a":
 											case "BusinessState":
-												update_user_meta($user_id, "Work State", $data[$i]);
+												update_user_meta($user_id, "work_State", $data[$i]);
 												break;
 											case "usr_city_a":
 											case "BusinessCity":
-												update_user_meta($user_id, "Work City", $data[$i]);
+												update_user_meta($user_id, "work_city", $data[$i]);
 												break;
 											case "usr_zip_a":
 											case "BusinessZip":
-												update_user_meta($user_id, "Work Zip", $data[$i]);
+												update_user_meta($user_id, "work_zip", $data[$i]);
 												break;
 											case "usr_phone_a":
 											case "BusinessPhone":
-												update_user_meta($user_id, "Work Phone", $data[$i]);
+												update_user_meta($user_id, "work_phone", $data[$i]);
 												break;
 											case "usr_fax_a":
 											case "BusinessFax":
-												update_user_meta($user_id, "Work Fax", $data[$i]);
+												update_user_meta($user_id, "work_fax", $data[$i]);
 												break;
 											case "usr_logon_count":
-												update_user_meta($user_id, "ClubTec Login Count", $data[$i]);
+												update_user_meta($user_id, "clubtec_login_count", $data[$i]);
 												break;
 											case "usr_family_id":
-												update_user_meta($user_id, "Family Id", $data[$i]);
+												update_user_meta($user_id, "family_id", $data[$i]);
 												break;
 											case "grp_name":
-												update_user_meta($user_id, "Groups", $data[$i]);
+												update_user_meta($user_id, "groups", $data[$i]);
 												break;
 										}  // switch
-										update_user_meta( $user_id, $headers[ $i ], $data[ $i ] );
+										//update_user_meta( $user_id, $headers[ $i ], $data[ $i ] );
 									}
 								}
 							}

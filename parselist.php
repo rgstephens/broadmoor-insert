@@ -36,7 +36,8 @@ if (array_key_exists("usr_id", $map_broadmoor_fields)) {
 $line = trim(fgets(STDIN)); // reads one line from STDIN
 $tokens = explode(" ", $line);
 echo ( $tokens[0] . '\r');
-/*$lists = explode(',',$line);
+/*
+$lists = explode(',',$line);
 foreach ($lists as $value) {
     $listname = str_replace('.', '', str_replace('-', '', str_replace('\'', '', str_replace(' ', '', $value))));
     echo 'listname: ' . $listname . "\n";
