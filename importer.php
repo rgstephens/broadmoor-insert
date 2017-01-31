@@ -123,21 +123,21 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 		case '35':
 		case 'Under':
 			if ($gender == 'F') {
-				update_user_meta($user_id, "men_golfing", "false");
-				update_user_meta($user_id, "women_golfing", "true");
+				update_user_meta($user_id, "men_golfing", "False");
+				update_user_meta($user_id, "women_golfing", "True");
 			} else {
-				update_user_meta($user_id, "men_golfing", "true");
-				update_user_meta($user_id, "women_golfing", "false");
+				update_user_meta($user_id, "men_golfing", "True");
+				update_user_meta($user_id, "women_golfing", "False");
 			}
-			update_user_meta($user_id, "all_homeowner", "false");
-			update_user_meta($user_id, "all_golf_club", "true");
-			update_user_meta($user_id, "employee", "false");
-			update_user_meta($user_id, "under_40", "true");
-			update_user_meta($user_id, "guest", "false");
-			update_user_meta($user_id, "junior", "false");
-			update_user_meta($user_id, "adv_intermediate", "false");
-			update_user_meta($user_id, "opt_in_bha", "false");
-			update_user_meta($user_id, "opt_in_bgc", "true");
+			update_user_meta($user_id, "all_homeowner", "False");
+			update_user_meta($user_id, "all_golf_club", "True");
+			update_user_meta($user_id, "employee", "False");
+			update_user_meta($user_id, "under_40", "True");
+			update_user_meta($user_id, "guest", "False");
+			update_user_meta($user_id, "junior", "False");
+			update_user_meta($user_id, "adv_intermediate", "False");
+			update_user_meta($user_id, "opt_in_bha", "False");
+			update_user_meta($user_id, "opt_in_bgc", "True");
 		case 'Honorary':
 		case 'Lifetime':
 		case 'Social':
@@ -148,22 +148,22 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 		case 'Senior':
 		case 'W.':
 		case 'Women':
-			update_user_meta($user_id, "all_golf_club", "true"); // All Golf Club
-			update_user_meta($user_id, "all_homeowner", "false");
-			update_user_meta($user_id, "employee", "false");
-			update_user_meta($user_id, "under_40", "false");
-			update_user_meta($user_id, "guest", "false");
-			update_user_meta($user_id, "junior", "false");
-			update_user_meta($user_id, "adv_intermediate", "false");
-			update_user_meta($user_id, "opt_in_bha", "false");
-			update_user_meta($user_id, "opt_in_bgc", "true");  // Get the newsletter
+			update_user_meta($user_id, "all_golf_club", "True"); // All Golf Club
+			update_user_meta($user_id, "all_homeowner", "False");
+			update_user_meta($user_id, "employee", "False");
+			update_user_meta($user_id, "under_40", "False");
+			update_user_meta($user_id, "guest", "False");
+			update_user_meta($user_id, "junior", "False");
+			update_user_meta($user_id, "adv_intermediate", "False");
+			update_user_meta($user_id, "opt_in_bha", "False");
+			update_user_meta($user_id, "opt_in_bgc", "True");  // Get the newsletter
 			if ($relationship == '1') {
 				if ($gender == 'F') {
-					update_user_meta($user_id, "men_golfing", "false");
-					update_user_meta($user_id, "women_golfing", "true");
+					update_user_meta($user_id, "men_golfing", "False");
+					update_user_meta($user_id, "women_golfing", "True");
 				} else {
-					update_user_meta($user_id, "men_golfing", "true");
-					update_user_meta($user_id, "women_golfing", "false");
+					update_user_meta($user_id, "men_golfing", "True");
+					update_user_meta($user_id, "women_golfing", "False");
 				}
 			} else {
 				// This is a spouse, is it paid or not paid spouse
@@ -171,47 +171,47 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 					// paid spouse, add to appropriate list
 					//error_log(print_r("type_to_list found Spouse of member, type: " . $clubtec_type . ", relationship: " . $relationship . ", gender: " . $gender, true));
 					if ($gender == 'F') {
-						update_user_meta($user_id, "men_golfing", "false");
-						update_user_meta($user_id, "women_golfing", "true");
+						update_user_meta($user_id, "men_golfing", "False");
+						update_user_meta($user_id, "women_golfing", "True");
 					} else {
-						update_user_meta($user_id, "men_golfing", "true");
-						update_user_meta($user_id, "women_golfing", "false");
+						update_user_meta($user_id, "men_golfing", "True");
+						update_user_meta($user_id, "women_golfing", "False");
 					}
 				} else {
 					// not a paid spouse does not get newsletter
-					update_user_meta($user_id, "men_golfing", "false");
-					update_user_meta($user_id, "women_golfing", "false");
+					update_user_meta($user_id, "men_golfing", "False");
+					update_user_meta($user_id, "women_golfing", "False");
 				}
 			}
 			break;
 		case 'Employee':
-			update_user_meta($user_id, "men_golfing", "true");
-			update_user_meta($user_id, "women_golfing", "true");
-			update_user_meta($user_id, "all_golf_club", "false");
-			update_user_meta($user_id, "all_homeowner", "false");
-			update_user_meta($user_id, "employee", "true");
-			update_user_meta($user_id, "under_40", "false");
-			update_user_meta($user_id, "guest", "false");
-			update_user_meta($user_id, "junior", "false");
-			update_user_meta($user_id, "adv_intermediate", "false");
-			update_user_meta($user_id, "opt_in_bha", "false");
-			update_user_meta($user_id, "opt_in_bgc", "false");
+			update_user_meta($user_id, "men_golfing", "True");
+			update_user_meta($user_id, "women_golfing", "True");
+			update_user_meta($user_id, "all_golf_club", "False");
+			update_user_meta($user_id, "all_homeowner", "False");
+			update_user_meta($user_id, "employee", "True");
+			update_user_meta($user_id, "under_40", "False");
+			update_user_meta($user_id, "guest", "False");
+			update_user_meta($user_id, "junior", "False");
+			update_user_meta($user_id, "adv_intermediate", "False");
+			update_user_meta($user_id, "opt_in_bha", "False");
+			update_user_meta($user_id, "opt_in_bgc", "False");
 			break;
 		case 'Homeowner':
 		case 'Non-Resident':
 		case 'Non-Owner':
 		case 'Renters':
-			update_user_meta($user_id, "men_golfing", "false");
-			update_user_meta($user_id, "women_golfing", "false");
-			update_user_meta($user_id, "all_golf_club", "false");
-			update_user_meta($user_id, "all_homeowner", "true");
-			update_user_meta($user_id, "employee", "false");
-			update_user_meta($user_id, "under_40", "false");
-			update_user_meta($user_id, "guest", "false");
-			update_user_meta($user_id, "junior", "false");
-			update_user_meta($user_id, "adv_intermediate", "false");
-			update_user_meta($user_id, "opt_in_bha", "true");
-			update_user_meta($user_id, "opt_in_bgc", "false");
+			update_user_meta($user_id, "men_golfing", "False");
+			update_user_meta($user_id, "women_golfing", "False");
+			update_user_meta($user_id, "all_golf_club", "False");
+			update_user_meta($user_id, "all_homeowner", "True");
+			update_user_meta($user_id, "employee", "False");
+			update_user_meta($user_id, "under_40", "False");
+			update_user_meta($user_id, "guest", "False");
+			update_user_meta($user_id, "junior", "False");
+			update_user_meta($user_id, "adv_intermediate", "False");
+			update_user_meta($user_id, "opt_in_bha", "True");
+			update_user_meta($user_id, "opt_in_bgc", "False");
 			break;
 	}
 }
@@ -275,7 +275,7 @@ function add_spouse($user_id, $file, $row, $data) {
 		$memberEmail = grab_email($currentLine);
 		//error_log(print_r("add_spouse, email: " . $spouseEmail, true));
 		$member = get_user_by( 'email', $memberEmail );
-		error_log(print_r($member, true));
+		//error_log(print_r($member, true));
 		//$spouse_link = get_edit_user_link( $spouse->ID );
 		if ( !function_exists( 'um_user_profile_url' ) ) {
 			error_log(print_r("add_spouse, loading um-short-functions.php", true));

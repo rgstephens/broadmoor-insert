@@ -466,7 +466,7 @@ function acui_extra_user_profile_fields( $user ) {
 	?>
 		<tr>
 			<th><label for="<?php echo $column; ?>"><?php echo $column; ?></label></th>
-			<td><input type="<?php if (esc_attr(get_the_author_meta($column, $user->ID )) == 'true' || esc_attr(get_the_author_meta($column, $user->ID )) == 'false') { echo 'checkbox'; }  else { echo 'text'; } ?>" name="<?php echo $column; ?>" id="<?php echo $column; ?>" <?php if (esc_attr(get_the_author_meta($column, $user->ID )) == 'true') { echo 'checked="' . esc_attr(get_the_author_meta($column, $user->ID )) . '"'; } else if (esc_attr(get_the_author_meta($column, $user->ID )) == 'false') { echo ''; } else echo 'value="' . esc_attr(get_the_author_meta($column, $user->ID )) . '"'; ?> class="regular-text" /></td>
+			<td><input type="<?php if (esc_attr(get_the_author_meta($column, $user->ID )) == 'True' || esc_attr(get_the_author_meta($column, $user->ID )) == 'False') { echo 'checkbox'; }  else { echo 'text'; } ?>" name="<?php echo $column; ?>" id="<?php echo $column; ?>" <?php if (esc_attr(get_the_author_meta($column, $user->ID )) == 'True') { echo 'checked="' . esc_attr(get_the_author_meta($column, $user->ID )) . '"'; } else if (esc_attr(get_the_author_meta($column, $user->ID )) == 'False') { echo ''; } else echo 'value="' . esc_attr(get_the_author_meta($column, $user->ID )) . '"'; ?> class="regular-text" /></td>
 		</tr>
 		<?php
 	endforeach;
