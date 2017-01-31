@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: Import users from CSV with meta
-Plugin URI: http://www.codection.com
+Plugin Name: Import ClubTec CSV
+Plugin URI:
 Description: This plugins allows to import users using CSV files to WP database automatically
 Author: codection
 Version: 1.9.9.8
-Author URI: http://codection.com
+Author URI:
 */
 
 if ( ! defined( 'ABSPATH' ) ) exit; 
@@ -14,9 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 $url_plugin = WP_PLUGIN_URL . '/' . str_replace( basename( __FILE__ ), "", plugin_basename( __FILE__ ) );
 $wp_users_fields = array( "id", "user_nicename", "user_url", "display_name", "nickname", "first_name", "last_name", "description", "jabber", "aim", "yim", "user_registered", "password", "user_pass" );
 $wp_min_fields = array("Username", "Email", "opt_in_bgc", "opt_in_bha");
-$show_meta_fields_admin = array("mobile_phone", "gender", "clubtec_account_type", "title", "birthday", "home_phone", "work_phone",
+$show_meta_fields_admin = array("mobile_phone", "gender", "clubtec_account_type", "title", "birthday", "relationship", "home_phone", "work_phone",
 	"home_address", "home_address_2", "home_city", "home_state", "home_aip", "home_fax",
-	"company", "job_title", "work_address", "work_address_2", "work_city", "work_aip", "work_fax",
+	"company", "job_title", "work_address", "work_address_2", "work_city", "work_zip", "work_fax",
 	"clubtec_login_count", "family_id", "groups", "opt_in_bgc", "opt_in_bha");
 $checkbox_fields = array("opt_in_bgc", "opt_in_bha", "all_golf_club", "men_golfing", "women_golfing", "under_40", "junior", "adv_intermediate", "all_homeowner", "employee", "guest");
 /*$show_meta_fields_admin = array("Mobile Phone", "Gender", "ClubTec Account Type", "Title", "Birthday", "Phone (Primary)", "Home Phone", "Work Phone",
@@ -105,7 +105,7 @@ function acui_delete_options(){
 }
 
 function acui_menu() {
-	add_submenu_page( 'tools.php', __( 'Insert users massively (CSV)', 'import-users-from-csv-with-meta' ), __( 'Import users from CSV', 'import-users-from-csv-with-meta' ), 'create_users', 'acui', 'acui_options' );
+	add_submenu_page( 'tools.php', __( 'Insert users massively (CSV)', 'import-users-from-csv-with-meta' ), __( 'Import users from ClubTec CSV', 'import-users-from-csv-with-meta' ), 'create_users', 'acui', 'acui_options' );
 	add_submenu_page( NULL, __( 'SMTP Configuration', 'import-users-from-csv-with-meta' ), __( 'SMTP Configuration', 'import-users-from-csv-with-meta' ), 'create_users', 'acui-smtp', 'acui_smtp' );
 }
 
@@ -211,7 +211,7 @@ function acui_check_options(){
 }
 
 function acui_admin_tabs( $current = 'homepage' ) {
-    $tabs = array( 'homepage' => __( 'Import users from CSV', 'import-users-from-csv-with-meta' ), 'columns' => __( 'Customs columns loaded', 'import-users-from-csv-with-meta' ), 'mail-options' => __( 'Mail options', 'import-users-from-csv-with-meta' ), 'doc' => __( 'Documentation', 'import-users-from-csv-with-meta' ), 'cron' => __( 'Cron import', 'import-users-from-csv-with-meta' ), 'donate' => __( 'Donate', 'import-users-from-csv-with-meta' ), 'shop' => __( 'Shop', 'import-users-from-csv-with-meta' ), 'help' => __( 'Hire an expert', 'import-users-from-csv-with-meta' ));
+    $tabs = array( 'homepage' => __( 'Import users from ClubTec CSV', 'import-users-from-csv-with-meta' ), 'columns' => __( 'Customs columns loaded', 'import-users-from-csv-with-meta' ), 'mail-options' => __( 'Mail options', 'import-users-from-csv-with-meta' ), 'doc' => __( 'Documentation', 'import-users-from-csv-with-meta' ), 'cron' => __( 'Cron import', 'import-users-from-csv-with-meta' ), 'donate' => __( 'Donate', 'import-users-from-csv-with-meta' ), 'shop' => __( 'Shop', 'import-users-from-csv-with-meta' ), 'help' => __( 'Hire an expert', 'import-users-from-csv-with-meta' ));
     echo '<div id="icon-themes" class="icon32"><br></div>';
     echo '<h2 class="nav-tab-wrapper">';
     foreach( $tabs as $tab => $name ){
@@ -441,6 +441,7 @@ function acui_extra_user_profile_fields( $user ) {
 		"Work Zip" => "work_zip",
 		"Work Fax" => "work_fax",
 		"ClubTec Login Count" => "login_count",
+		"Relationship" => "relationship",
 		"Family Id" => "family_id",
 		"Groups" => "groups");
 
@@ -449,7 +450,7 @@ function acui_extra_user_profile_fields( $user ) {
 	//error_log(print_r($headers, true));
 	if( is_array($headers) && !empty($headers) ):
 ?>
-	<h3>Extra profile information</h3>
+	<h3>Extra profile information (v1.0)</h3>
 	
 	<table class="form-table"><?php
 

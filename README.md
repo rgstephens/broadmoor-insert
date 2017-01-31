@@ -2,7 +2,7 @@
 
 Notes on how the script works, key variables and calls.
 
-### Key objects & variables
+### Key Script Objects & Variables
 
 **$user_data**, holds core user object (id, username, email, password) for **wp_insert_user**
 **$updateEmailArgs**, holds id & email for **wp_update_user**
@@ -22,13 +22,25 @@ Wordpress field names are defined [here](https://codex.wordpress.org/Function_Re
 
 ### Wordpress calls that update database:
 
+- **wp_create_user** - Insert user with only basic info: username, password & email. **Main create call**
 - **wp_insert_user** - Insert user, allows meta data, password change email not sent
-- **wp_create_user** - Insert user with only basic info: username, password & email
 - **wp_update_user** -  Updates multiple pieces of user data but not custom metadata & send ***password change email***
 - **update_user_meta** - Updates a single piece of user metadata
 - **delete_user_meta** - 
 - **wp_set_password** -
 - **do_action**('lostpassword_post')
+
+### Steps to Add New Import Field
+
+- Add CSV field name to **$map_broadmoor_fields** in importer.php
+- Add imported field to **$show_meta_fields_admin** in import-users-from-csv-with-meta.php
+- Add block to switch statement (see below) in importer.php
+
+```
+case "Relationship":
+	update_user_meta($user_id, "relationship", $data[$i]);
+	break;
+```
 
 ### Example create boolean user meta field
 

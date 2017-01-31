@@ -2,12 +2,23 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+function clean_name($value) {
+	// drop text after &
+	if (strpos($value, '&')) {
+		$name = trim(substr($value, 0, strpos($value, '&')));
+	} else {
+		$name = trim($value);
+	}
+	return str_replace('.', '', str_replace('-', '', str_replace('\'', '', str_replace(' ', '', str_replace('""', '', str_replace('(', '', str_replace(')', '', $name)))))));
+}
+
 function clean_string($value) {
 	return str_replace('.', '', str_replace('-', '', str_replace('\'', '', str_replace(' ', '', $value))));
 }
 
 function composeUsername($data) {
-	$fullname = $data[2][0] . $data[3];
+	//$fullname = $data[2][0] . $data[3];
+	$fullname = clean_string(clean_name($data[2]) . $data[3]);
 	//error_log(print_r("composeUsername: " . $data[1] . " data[2]: " . $data[2] . ", fullname: " . $data[1][0] . $data[2], true));
 	return $fullname;
 }
@@ -103,9 +114,10 @@ function type_to_type($clubtec_type) {
 	}
 }
 
-function type_to_list($user_id, $clubtec_type, $gender) {
+function type_to_list($user_id, $clubtec_type, $gender, $relationship)
+{
 	$tokens = explode(" ", $clubtec_type);
-	error_log(print_r("type_to_list: " . $clubtec_type . " token: " . $tokens[0] . ", gender: " . $gender, true));
+	//error_log(print_r("type_to_list: " . $clubtec_type . " token: " . $tokens[0] . ", gender: " . $gender, true));
 	switch ($tokens[0]) {
 		case '30-34':
 		case '35':
@@ -117,15 +129,15 @@ function type_to_list($user_id, $clubtec_type, $gender) {
 				update_user_meta($user_id, "men_golfing", "true");
 				update_user_meta($user_id, "women_golfing", "false");
 			}
-		update_user_meta($user_id, "all_homeowner", "false");
-		update_user_meta($user_id, "all_golf_club", "true");
-		update_user_meta($user_id, "employee", "false");
-		update_user_meta($user_id, "under_40", "true");
-		update_user_meta($user_id, "guest", "false");
-		update_user_meta($user_id, "junior", "false");
-		update_user_meta($user_id, "adv_intermediate", "false");
-		update_user_meta($user_id, "opt_in_bha", "false");
-		update_user_meta($user_id, "opt_in_bgc", "true");
+			update_user_meta($user_id, "all_homeowner", "false");
+			update_user_meta($user_id, "all_golf_club", "true");
+			update_user_meta($user_id, "employee", "false");
+			update_user_meta($user_id, "under_40", "true");
+			update_user_meta($user_id, "guest", "false");
+			update_user_meta($user_id, "junior", "false");
+			update_user_meta($user_id, "adv_intermediate", "false");
+			update_user_meta($user_id, "opt_in_bha", "false");
+			update_user_meta($user_id, "opt_in_bgc", "true");
 		case 'Honorary':
 		case 'Lifetime':
 		case 'Social':
@@ -136,22 +148,41 @@ function type_to_list($user_id, $clubtec_type, $gender) {
 		case 'Senior':
 		case 'W.':
 		case 'Women':
-		if ($gender == 'F') {
-			update_user_meta($user_id, "men_golfing", "false");
-			update_user_meta($user_id, "women_golfing", "true");
-		} else {
-			update_user_meta($user_id, "men_golfing", "true");
-			update_user_meta($user_id, "women_golfing", "false");
-		}
-		    update_user_meta($user_id, "all_golf_club", "true");
-		update_user_meta($user_id, "all_homeowner", "false");
+			update_user_meta($user_id, "all_golf_club", "true"); // All Golf Club
+			update_user_meta($user_id, "all_homeowner", "false");
 			update_user_meta($user_id, "employee", "false");
 			update_user_meta($user_id, "under_40", "false");
 			update_user_meta($user_id, "guest", "false");
 			update_user_meta($user_id, "junior", "false");
 			update_user_meta($user_id, "adv_intermediate", "false");
 			update_user_meta($user_id, "opt_in_bha", "false");
-			update_user_meta($user_id, "opt_in_bgc", "true");
+			update_user_meta($user_id, "opt_in_bgc", "true");  // Get the newsletter
+			if ($relationship == '1') {
+				if ($gender == 'F') {
+					update_user_meta($user_id, "men_golfing", "false");
+					update_user_meta($user_id, "women_golfing", "true");
+				} else {
+					update_user_meta($user_id, "men_golfing", "true");
+					update_user_meta($user_id, "women_golfing", "false");
+				}
+			} else {
+				// This is a spouse, is it paid or not paid spouse
+				if (strpos($clubtec_type, 'Spouse')) {
+					// paid spouse, add to appropriate list
+					//error_log(print_r("type_to_list found Spouse of member, type: " . $clubtec_type . ", relationship: " . $relationship . ", gender: " . $gender, true));
+					if ($gender == 'F') {
+						update_user_meta($user_id, "men_golfing", "false");
+						update_user_meta($user_id, "women_golfing", "true");
+					} else {
+						update_user_meta($user_id, "men_golfing", "true");
+						update_user_meta($user_id, "women_golfing", "false");
+					}
+				} else {
+					// not a paid spouse does not get newsletter
+					update_user_meta($user_id, "men_golfing", "false");
+					update_user_meta($user_id, "women_golfing", "false");
+				}
+			}
 			break;
 		case 'Employee':
 			update_user_meta($user_id, "men_golfing", "true");
@@ -185,6 +216,95 @@ function type_to_list($user_id, $clubtec_type, $gender) {
 	}
 }
 
+function add_children($user_id, $file, $row) {
+	//error_log(print_r("add_children, row: " . $row, true));
+	$childrenNames = '';
+	$fileloc = new SplFileObject( $file );
+	$fileloc->setFlags(SplFileObject::READ_CSV | SplFileObject::READ_AHEAD | SplFileObject::DROP_NEW_LINE);
+	$rowNum = intval($row);
+	$fileloc->seek($rowNum);
+	$currentLine = $fileloc->current();
+	while ($currentLine[5] == '2' || $currentLine[5] == '3') {
+		//error_log(print_r("add_children, we have a spouse or child, currentLine: " . $currentLine[4], true));
+		//error_log(print_r($currentLine, true));
+		if ($currentLine[5] == '3') {
+			if (strlen($childrenNames) > 0) {
+				$childrenNames = $childrenNames . ', ' . $currentLine[2];
+			} else {
+				$childrenNames = $currentLine[2];
+			}
+		}
+		//error_log(print_r("add_children, children_names: " . $childrenNames, true));
+		$rowNum = $rowNum + 1;
+		$fileloc->seek($rowNum);
+		$currentLine = $fileloc->current();
+		if (!$currentLine) {
+			error_log(print_r("add_children, EOF: " . $childrenNames, true));
+			break;
+		}
+		if ($rowNum > 5) {
+			error_log(print_r("add_children, break: " . $childrenNames, true));
+			break;
+		}
+	}
+	//error_log(print_r(">> add_children, children_names: " . $childrenNames, true));
+	update_user_meta($user_id, "children", $childrenNames);
+/*	error_log(print_r("add_children, got current line", true));
+	if ($currentLine) {
+		error_log(print_r("add_children, next row: ", true));
+		error_log(print_r($currentLine, true));
+	} else {
+		error_log(print_r("add_children, current line false", true));
+	}*/
+}
+
+function add_spouse($user_id, $file, $row, $data) {
+	if ($data[5] == '2') {
+		// we've got a spouse entry
+		// ******************************************
+		// get primary member link and add to spouse (this user)
+		// ******************************************
+		//error_log(print_r("add_spouse, row: " . $row, true));
+		$fileloc = new SplFileObject( $file );
+		$fileloc->setFlags(SplFileObject::READ_CSV | SplFileObject::READ_AHEAD | SplFileObject::DROP_NEW_LINE);
+		$rowNum = intval($row) - 2;
+		$fileloc->seek($rowNum);
+		$currentLine = $fileloc->current();
+		//error_log(print_r("add_spouse, spouse: " . $currentLine[2], true));
+		//error_log(print_r($currentLine, true));
+		$memberEmail = grab_email($currentLine);
+		//error_log(print_r("add_spouse, email: " . $spouseEmail, true));
+		$member = get_user_by( 'email', $memberEmail );
+		error_log(print_r($member, true));
+		//$spouse_link = get_edit_user_link( $spouse->ID );
+		if ( !function_exists( 'um_user_profile_url' ) ) {
+			error_log(print_r("add_spouse, loading um-short-functions.php", true));
+			require_once '/core/um-short-functions.php';
+		}
+
+		//error_log(print_r("add_spouse, um_fetch_user", true));
+		um_fetch_user($member->ID);
+		//error_log(print_r("add_spouse, profile url: " . um_user_profile_url(), true));
+		$member_url = um_user_profile_url();
+		// Update spouse record with member info
+		update_user_meta($user_id, "spouse_url", $member_url);
+		update_user_meta($user_id, "spouse_name", $member->display_name);
+		um_reset_user();
+
+		// ******************************************
+		// add spouse link (this user) to primary member
+		// ******************************************
+		um_fetch_user($user_id);
+		$spouse_url = um_user_profile_url();
+		um_reset_user();
+		$spouse_displayname = clean_name($data[2]) . ' ' . $data[3];
+		// Update member info with spouse details
+		update_user_meta($member->ID, "spouse_url", $spouse_url);
+		update_user_meta($member->ID, "spouse_name", $spouse_displayname);
+
+		//error_log(print_r("add_spouse, spouse_url: " . $spouse_url, true));
+	}
+}
 
 function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false ){?>
 	<div class="wrap">
@@ -197,12 +317,13 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			global $wpdb;
 			global $wp_users_fields;
 			global $wp_min_fields;
+		$report_fields = array('MemberNumber', 'FirstName', 'LastName', 'TypeDesc', 'HomeEmail');
 		$map_broadmoor_fields = array(
 			"MemberNumber" => "membership_number",
 			"MobilePhone" => "mobile_phone",
 			"Gender" => "gender",
-			"TypeDesc" => "clubtec_account_type",  // missing
 			"Title" => "title",
+			"Relationsip" => "relationship",
 			"Birthdate" => "birthday",
 			"HomePhone" => "home_phone",
 			"BusinessPhone" => "work_phone",
@@ -219,7 +340,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			"BusinessCity" => "work_city",
 			"BusinessState" => "work_state",
 			"BusinessZip" => "work_zip",
-			"BusinessFax" => "work_fax"
+			"BusinessFax" => "work_fax",
+			"TypeDesc" => "clubtec_account_type"
 			//"usr_logon_count" => "ClubTec Login Count",
 			//"usr_family_id" => "Family Id",
 			//"grp_name" => "Groups"
@@ -339,16 +461,19 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 		$headers_filtered[] = 'all_homeowner';
 		$headers_filtered[] = 'employee';
 		$headers_filtered[] = 'guest';
+		$headers_filtered[] = 'children';
+		$headers_filtered[] = 'spouse_name';
+		$headers_filtered[] = 'spouse_url';
 
 					$columns = count( $data );
 
-		error_log(print_r("calling acui_columns: ", true));
-		error_log(print_r($headers_filtered, true));
+		//error_log(print_r("calling acui_columns: ", true));
+		//error_log(print_r($headers_filtered, true));
 					update_option( "acui_columns", $headers_filtered );
 					?>
 					<h3><?php _e( 'Inserting and updating data', 'import-users-from-csv-with-meta' ); ?></h3>
 					<table>
-						<tr><th><?php _e( 'Row', 'import-users-from-csv-with-meta' ); ?></th><?php foreach( $headers as $element ) echo "<th>" . $element . "</th>"; ?></tr>
+						<tr><th><?php _e( 'Row', 'import-users-from-csv-with-meta' ); ?></th><?php foreach( $headers as $element ) if (in_array($element, $report_fields)) { echo "<th>" . $element . "</th>"; } ?></tr>
 					<?php
 					$row++;
 				else:
@@ -382,6 +507,13 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						$password = wp_generate_password();
 					else
 						$password = $data[ $password_position ];
+
+					// skip children
+					if ($data[5] == '3' && !$email) {
+						$row++;
+						error_log(print_r("skipping child: " . $data[2] . " " . $data[3], true));
+						continue;
+					}
 
 					if( !empty( $id ) ){ // if user have used id
 						if( acui_user_id_exists( $id ) ){
@@ -480,7 +612,12 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						$doing_create = true;
 						$email = grab_email($data);
 						//error_log(print_r("wp_create_user, username: " . $username . ", email: " . $email, true));
-						$user_id = wp_create_user( $username, $password, $email );
+						//$user_id = wp_create_user( $username, $password, $email );
+						if ($email) {
+							$user_id = wp_create_user( $email, $password, $email );
+						} else {
+							$user_id = wp_create_user( $username, $password, $email );
+						}
 					}
 
 					if( is_wp_error( $user_id ) ){ // in case the user is generating errors after this checks
@@ -558,18 +695,20 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 										switch ( $headers[ $i ] ){
 											case 'TypeDesc':
 												$wp_role = type_to_role($data[ $i ]);
-												type_to_list($user_id, $data[$i], $data[31]);
+												type_to_list($user_id, $data[$i], $data[31], $data[5]);
 												//error_log(print_r("setting roles to  " . $wp_role, true));
 												wp_update_user( array( 'ID' => $user_id, 'role' => $wp_role) );
 												update_user_meta( $user_id, "role", strtolower($wp_role) );
 												update_user_meta($user_id, "clubtec_account_type", $data[$i]);
+												add_children($user_id, $file, $row);
+												add_spouse($user_id, $file, $row, $data);
 												break;
 											case 'FirstName':
 												$nickname = $data[$i][0] . $data[$i + 1];
 												$displayname = $data[ $i ] . ' ' . $data[$i + 1];
 												//error_log(print_r("FirstName #1 " . $data[$i] . ", nickname: " . $nickname . ", display_name: " . $displayname . ", composeUsername: " . composeUsername($data), true));
-												wp_update_user( array( 'ID' => $user_id, 'first_name' => $data[ $i ] ) );
-												wp_update_user( array( 'ID' => $user_id, 'display_name' => $data[ $i ] . ' ' . $data[$i + 1] ) );
+												wp_update_user( array( 'ID' => $user_id, 'first_name' => clean_name($data[$i]) ) );
+												wp_update_user( array( 'ID' => $user_id, 'display_name' => clean_name($data[$i]) . ' ' . $data[$i + 1] ) );
 												wp_update_user( array( 'ID' => $user_id, 'nickname' => $data[ $i ][0] . $data[$i + 1] ) );
 												wp_update_user( array( 'ID' => $user_id, 'user_login' => composeUsername($data) ) );
 												break;
@@ -577,9 +716,9 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												//error_log(print_r("LastName: " . $data[ $i ], true ));
 												wp_update_user( array( 'ID' => $user_id, 'last_name' => $data[ $i ] ) );
 												$nickname = $data[$i-1][0] . $data[$i];
-												$displayname = $data[ $i-1 ] . ' ' . $data[$i];
+												$displayname = clean_name($data[ $i-1 ]) . ' ' . $data[$i];
 												//error_log(print_r("FirstName #2 " . $data[$i-1] . ", nickname: " . $nickname . ", display_name: " . $displayname . ", composeUsername: " . composeUsername($data), true));
-												wp_update_user( array( 'ID' => $user_id, 'first_name' => $data[ $i-1 ] ) );
+												wp_update_user( array( 'ID' => $user_id, 'first_name' => clean_name($data[$i-1])) );
 												wp_update_user( array( 'ID' => $user_id, 'display_name' => $displayname ) );
 												wp_update_user( array( 'ID' => $user_id, 'nickname' => $nickname ) );
 												wp_update_user( array( 'ID' => $user_id, 'user_login' => composeUsername($data) ) );
@@ -601,7 +740,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												break;
 											case 'usr_firstname':
 												wp_update_user( array( 'ID' => $user_id, 'first_name' => $data[ $i ] ) );
-												wp_update_user( array( 'ID' => $user_id, 'display_name' => $data[ $i ] . ' ' . $data[$i + 1] . ' ' . $data[$i + 2] ) );
+												wp_update_user( array( 'ID' => $user_id, 'display_name' => clean_name($data[ $i ]) . ' ' . $data[$i + 1] . ' ' . $data[$i + 2] ) );
 												wp_update_user( array( 'ID' => $user_id, 'nickname' => $data[ $i ][0] . $data[$i + 2] ) );
 												break;
 											case 'usr_lastname':
@@ -649,9 +788,12 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 													$genderCaps = 'Female';
 													$genderEnum = 'a:1:{i:0;s:6:"Female";}';
 												}
-												error_log(print_r("Gender " . $data[$i] . " convert to: " . $genderCaps, true));
+												//error_log(print_r("Gender " . $data[$i] . " convert to: " . $genderCaps, true));
 												update_user_meta($user_id, "gender", $genderCaps);
 												//update_user_meta($user_id, "Gender", $genderCaps);
+												break;
+											case "Relationship":
+												update_user_meta($user_id, "relationship", $data[$i]);
 												break;
 											case "Title":
 												update_user_meta($user_id, "title", $data[$i]);
@@ -756,8 +898,17 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						$styles = "background-color:red; color:white;";
 
 					echo "<tr style='$styles' ><td>" . ($row - 1) . "</td>";
-					foreach ($data as $element)
-						echo "<td>$element</td>";
+					foreach ($data as $key=>$element) {
+						//error_log(print_r("Report, key " . $headers[$key] . ', element: ' . $element, true));
+						if(in_array($headers[$key], $report_fields)) {
+							//error_log(print_r("Match >> " . $headers[$key] . ', element: ' . $element, true));
+							echo "<td>$element</td>";
+					}
+						}
+
+						if ($doing_create) {
+							echo "<td>**Insert**</td>";
+						}
 
 					echo "</tr>\n";
 
@@ -952,11 +1103,8 @@ function acui_options()
 		</div>
 		<?php endif; ?>	
 
-		<div id='message' class='updated'><?php _e( 'File must contain at least <strong>2 columns: username and email</strong>. These should be the first two columns and it should be placed <strong>in this order: username and email</strong>. If there are more columns, this plugin will manage it automatically.', 'import-users-from-csv-with-meta' ); ?></div>
-		<div id='message-password' class='error'><?php _e( 'Please, read carefully how <strong>passwords are managed</strong> and also take note about capitalization, this plugin is <strong>case sensitive</strong>.', 'import-users-from-csv-with-meta' ); ?></div>
-
 		<div style="float:left; width:80%;">
-			<h2><?php _e( 'Import users from CSV','import-users-from-csv-with-meta' ); ?></h2>
+			<h2><?php _e( 'Import users from ClubTec CSV','import-users-from-csv-with-meta' ); ?></h2>
 		</div>
 
 		<div style="clear:both;"></div>
@@ -965,44 +1113,6 @@ function acui_options()
 			<form method="POST" enctype="multipart/form-data" action="" accept-charset="utf-8" onsubmit="return check();">
 			<table class="form-table">
 				<tbody>
-				<tr class="form-field form-required">
-					<th scope="row"><label><?php _e( 'Update existing users?', 'import-users-from-csv-with-meta' ); ?></label></th>
-					<td>
-						<select name="update_existing_users">
-							<option value="yes"><?php _e( 'Yes', 'import-users-from-csv-with-meta' ); ?></option>
-							<option value="no"><?php _e( 'No', 'import-users-from-csv-with-meta' ); ?></option>
-						</select>
-					</td>
-				</tr>
-
-				<tr class="form-field">
-					<th scope="row"><label for="role"><?php _e( 'Role', 'import-users-from-csv-with-meta' ); ?></label></th>
-					<td>
-					<?php 
-						$list_roles = acui_get_editable_roles(); 
-						
-						foreach ($list_roles as $key => $value) {
-							if($key == "subscriber")
-								echo "<label style='margin-right:5px;'><input name='role[]' type='checkbox' checked='checked' value='$key'/>$value</label>";
-							else
-								echo "<label style='margin-right:5px;'><input name='role[]' type='checkbox' value='$key'/>$value</label>";
-						}
-					?>
-
-					<p class="description"><?php _e( 'If you choose more than one role, the roles would be assigned correctly but you should use some plugin like <a href="https://wordpress.org/plugins/user-role-editor/">User Role Editor</a> to manage them.', 'import-users-from-csv-with-meta' ); ?></p>
-					</td>
-				</tr>
-
-				<tr class="form-field form-required">
-					<th scope="row"><label><?php _e( 'Update roles for existing users?', 'import-users-from-csv-with-meta' ); ?></label></th>
-					<td>
-						<select name="update_roles_existing_users">
-							<option value="no"><?php _e( 'No', 'import-users-from-csv-with-meta' ); ?></option>
-							<option value="yes"><?php _e( 'Yes', 'import-users-from-csv-with-meta' ); ?></option>
-						</select>
-					</td>
-				</tr>
-
 				<tr class="form-field form-required">
 					<th scope="row"><label><?php _e( 'CSV file <span class="description">(required)</span></label>', 'import-users-from-csv-with-meta' ); ?></th>
 					<td>
@@ -1014,6 +1124,16 @@ function acui_options()
 							<input placeholder="<?php _e( 'You have to introduce the path to file, i.e.:' ,'import-users-from-csv-with-meta' ); ?><?php $upload_dir = wp_upload_dir(); echo $upload_dir["path"]; ?>/test.csv" type="text" name="path_to_file" id="path_to_file" value="<?php echo dirname( __FILE__ ); ?>/test.csv" style="width:70%;" />
 							<em><?php _e( 'or you can upload it directly from your PC', 'import-users-from-csv-with-meta' ); ?>, <a href="#" class="toggle_upload_path"><?php _e( 'click here', 'import-users-from-csv-with-meta' ); ?></a>.</em>
 						</div>
+					</td>
+				</tr>
+
+				<tr class="form-field form-required">
+					<th scope="row"><label><?php _e( 'Update existing users?', 'import-users-from-csv-with-meta' ); ?></label></th>
+					<td>
+						<select name="update_existing_users">
+							<option value="yes"><?php _e( 'Yes', 'import-users-from-csv-with-meta' ); ?></option>
+							<option value="no"><?php _e( 'No', 'import-users-from-csv-with-meta' ); ?></option>
+						</select>
 					</td>
 				</tr>
 
@@ -1157,11 +1277,6 @@ function acui_options()
 		if( jQuery( "#path_to_file" ).val() == "" && jQuery( "#introduce_path" ).is(":visible") ) {
 		   alert("<?php _e( 'Please enter a path to the file', 'import-users-from-csv-with-meta' ); ?>");
 		   return false;
-		}
-
-		if( jQuery("[name=role\\[\\]]input:checkbox:checked").length == 0 ){
-			alert("<?php _e( 'Please select a role', 'import-users-from-csv-with-meta'); ?>");
-		   	return false;	
 		}
 	}
 
