@@ -495,9 +495,9 @@ function acui_save_extra_user_profile_fields( $user_id ){
 			} else {
 				//error_log(print_r("saving, column: " . $column . ", value: " . $post_filtered[$column_sanitized], true));
 				if (array_key_exists($column_sanitized, $post_filtered)) {
-					update_user_meta( $user_id, $column, 'true' );
+					update_user_meta( $user_id, $column, 'True' );
 				} else {
-					update_user_meta( $user_id, $column, 'false' );
+					update_user_meta( $user_id, $column, 'False' );
 				}
 			}
 		}

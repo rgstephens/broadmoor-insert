@@ -20,7 +20,7 @@ Notes on how the script works, key variables and calls.
 
 Wordpress field names are defined [here](https://codex.wordpress.org/Function_Reference/wp_update_user).
 
-### Wordpress calls that update database:
+### Wordpress calls:
 
 - **wp_create_user** - Insert user with only basic info: username, password & email. **Main create call**
 - **wp_insert_user** - Insert user, allows meta data, password change email not sent
@@ -29,6 +29,7 @@ Wordpress field names are defined [here](https://codex.wordpress.org/Function_Re
 - **delete_user_meta** - 
 - **wp_set_password** -
 - **do_action**('lostpassword_post')
+- **wp_mail**( $email, $subject, $body_mail ) - send email
 
 ### Steps to Add New Import Field
 
