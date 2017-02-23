@@ -28,7 +28,7 @@ function clean_string($value) {
 
 $value = trim(fgets(STDIN)); // reads one line from STDIN
 
-$clean = clean_name($value);
+/*$clean = clean_name($value);
 $middle = first_middleinit($value);
 echo $clean . "\n";
 echo $middle . "\n";
@@ -51,12 +51,13 @@ $firstinit_last = clean_string(clean_name($value)[0] . 'Stephens') . $num;
 echo $firstinit_last . "\n";
 $num++;
 $firstinit_last = clean_string(clean_name($value)[0] . 'Stephens') . $num;
-echo $firstinit_last . "\n";
+echo $firstinit_last . "\n";*/
 
-/*$tokens = explode(",", $value);
+$tokens = explode(",", $value);
 while (list ($key, $val) = each ($tokens) ) {
     echo $val . "\n";
-}*/
+}
+
 /*if (strpos($value, '&')) {
     $name = trim(substr($value, 0, strpos($value, '&')));
 } else {

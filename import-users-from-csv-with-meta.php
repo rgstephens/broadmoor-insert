@@ -13,12 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 $url_plugin = WP_PLUGIN_URL . '/' . str_replace( basename( __FILE__ ), "", plugin_basename( __FILE__ ) );
 $wp_users_fields = array( "id", "user_nicename", "user_url", "display_name", "nickname", "first_name", "last_name", "description", "jabber", "aim", "yim", "user_registered", "password", "user_pass" );
-$wp_min_fields = array("Username", "Email", "opt_in_bgc", "opt_in_bha");
+$wp_min_fields = array("Username", "Email");
 $show_meta_fields_admin = array("mobile_phone", "gender", "clubtec_account_type", "title", "birthday", "relationship", "home_phone", "work_phone",
-	"home_address", "home_address_2", "home_city", "home_state", "home_aip", "home_fax",
+	"home_address", "home_address_2", "home_city", "home_state", "home_aip", "home_fax", "home_email", "business_email", "corr_email",
 	"company", "job_title", "work_address", "work_address_2", "work_city", "work_zip", "work_fax",
 	"clubtec_login_count", "family_id", "groups", "opt_in_bgc", "opt_in_bha");
-$checkbox_fields = array("opt_in_bgc", "opt_in_bha", "all_golf_club", "men_golfing", "women_golfing", "under_40", "junior", "adv_intermediate", "all_homeowner", "employee", "guest");
+$checkbox_fields = array("opt_in_bgc", "opt_in_bha", "all_golf_club", "men_golfing", "women_golfing", "under_40", "junior", "adv_intermediate", "all_resident", "all_homeowner", "non_owner", "renter", "employee", "guest");
 /*$show_meta_fields_admin = array("Mobile Phone", "Gender", "ClubTec Account Type", "Title", "Birthday", "Phone (Primary)", "Home Phone", "Work Phone",
 	"Home Address", "Home Address 2", "Home City", "Home State", "Home Zip", "Home Fax",
 	"Company", "Job Title", "Work Address", "Work Address 2", "Work City", "Work Zip", "Work Fax",
@@ -424,6 +424,9 @@ function acui_extra_user_profile_fields( $user ) {
 		"Title" => "title",
 		"Birthday" => "birthday",
 		"Phone (Primary)" => "phone",
+		"Home Email" => "home_email",
+		"Business Email" => "business_email",
+		"Corr Email" => "corr_email",
 		"Home Phone" => "home_phone",
 		"Work Phone" => "work_phone",
 		"Home Address" => "home_addr",
@@ -450,7 +453,7 @@ function acui_extra_user_profile_fields( $user ) {
 	//error_log(print_r($headers, true));
 	if( is_array($headers) && !empty($headers) ):
 ?>
-	<h3>Extra profile information (v1.0)</h3>
+	<h3>Extra profile information (v1.51, Feb 9, 2017)</h3>
 	
 	<table class="form-table"><?php
 

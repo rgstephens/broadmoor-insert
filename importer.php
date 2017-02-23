@@ -1,5 +1,42 @@
 <?php
 
+class Logger
+{
+	protected $file;
+	protected $content;
+	protected $writeFlag;
+	protected $endRow;
+
+	public function __construct($file, $endRow = "\n", $writeFlag = FILE_APPEND)
+	{
+		$this->file = $file;
+		$this->writeFlag = $writeFlag;
+		$this->endRow = $endRow;
+	}
+
+	public function AddRow($content = "", $newLines = 1)
+	{
+		$newRow = '';
+		for ($m = 0; $m < $newLines; $m++) {
+			$newRow .= $this->endRow;
+		}
+		$this->content .= date("Y-m-d H:i:s") . " " . $content . $newRow;
+	}
+
+	public function Commit()
+	{
+		return file_put_contents($this->file, $this->content, $this->writeFlag);
+	}
+
+	public function LogError($error, $newLines = 1)
+	{
+		if ($error != "") {
+			$this->AddRow($error, $newLines);
+			echo $error;
+		}
+	}
+}
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 function clean_name($value) {
@@ -45,7 +82,7 @@ function composeUsername($data) {
 	}
 
 	$wp_role = type_to_role($data[7]);
-	if ($wp_role == 'Homeowner') {
+	if ($wp_role == 'Homeowner' || $wp_role == 'Homowner') {
 		// Try first initial, last name
 		$name = clean_string(clean_name($data[2])[0] . $data[3]) . 'bha';
 		if (!username_exists( $name ) ) {
@@ -81,12 +118,23 @@ function composeUsername($data) {
 	}
 }
 
+function userChanged($data, $userdata) {
+	return false;
+}
+
+function userMetaChanged($data, $userdata) {
+	return false;
+}
+
 function grab_email($data) {
 	if ($data[17]) {
+		//error_log(print_r("data[17]: " . $data[17], true));
 		return $data[17];
 	} elseif ($data[27]) {
+		//error_log(print_r("data[27]: " . $data[27], true));
 		return $data[27];
 	} elseif ($data[33]) {
+		//error_log(print_r("data[33]: " . $data[33], true));
 		return $data[33];
 	} else {
 		return false;
@@ -102,7 +150,7 @@ function grab_email($data) {
 
 function type_to_role($clubtec_type) {
 	$tokens = explode(" ", $clubtec_type);
-	error_log(print_r("type_to_role: " . $clubtec_type . " token: " . $tokens[0], true));
+	//error_log(print_r("type_to_role: " . $clubtec_type . " token: " . $tokens[0], true));
 	switch ($tokens[0]) {
 		case '30-34':
 		case '35':
@@ -123,6 +171,7 @@ function type_to_role($clubtec_type) {
 			return 'Employee';
 			break;
 		case 'Homeowner':
+		case 'Homowner':
 			return 'Homeowner';
 			break;
 		case 'Non-Owner':
@@ -140,10 +189,11 @@ function type_to_type($clubtec_type) {
 	switch ($tokens[0]) {
 		case '30-34':
 		case '35':
+		case 'Homowner':
 		case 'Homeowner':
 		case 'Honorary':
 		case 'Lifetime':
-		case 'Non-Residents':
+		case 'Non-Owner':
 		case 'Renters':
 		case 'Social':
 			return $tokens[0];
@@ -257,14 +307,46 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "opt_in_bha", "False");
 			update_user_meta($user_id, "opt_in_bgc", "False");
 			break;
+		case 'Homowner':
 		case 'Homeowner':
-		case 'Non-Resident':
-		case 'Non-Owner':
-		case 'Renters':
+			update_user_meta($user_id, "all_resident", "True");
+			update_user_meta($user_id, "all_homeowner", "True");
+			update_user_meta($user_id, "non_owner", "False");
+			update_user_meta($user_id, "renter", "False");
 			update_user_meta($user_id, "men_golfing", "False");
 			update_user_meta($user_id, "women_golfing", "False");
 			update_user_meta($user_id, "all_golf_club", "False");
-			update_user_meta($user_id, "all_homeowner", "True");
+			update_user_meta($user_id, "employee", "False");
+			update_user_meta($user_id, "under_40", "False");
+			update_user_meta($user_id, "guest", "False");
+			update_user_meta($user_id, "junior", "False");
+			update_user_meta($user_id, "adv_intermediate", "False");
+			update_user_meta($user_id, "opt_in_bha", "True");
+			update_user_meta($user_id, "opt_in_bgc", "False");
+		case 'Non-Resident':
+		case 'Non-Owner':
+			update_user_meta($user_id, "all_resident", "True");
+			update_user_meta($user_id, "all_homeowner", "False");
+			update_user_meta($user_id, "non_owner", "True");
+			update_user_meta($user_id, "renter", "False");
+			update_user_meta($user_id, "men_golfing", "False");
+			update_user_meta($user_id, "women_golfing", "False");
+			update_user_meta($user_id, "all_golf_club", "False");
+			update_user_meta($user_id, "employee", "False");
+			update_user_meta($user_id, "under_40", "False");
+			update_user_meta($user_id, "guest", "False");
+			update_user_meta($user_id, "junior", "False");
+			update_user_meta($user_id, "adv_intermediate", "False");
+			update_user_meta($user_id, "opt_in_bha", "True");
+			update_user_meta($user_id, "opt_in_bgc", "False");
+		case 'Renters':
+			update_user_meta($user_id, "all_resident", "True");
+			update_user_meta($user_id, "all_homeowner", "False");
+			update_user_meta($user_id, "non_owner", "False");
+			update_user_meta($user_id, "renter", "True");
+			update_user_meta($user_id, "men_golfing", "False");
+			update_user_meta($user_id, "women_golfing", "False");
+			update_user_meta($user_id, "all_golf_club", "False");
 			update_user_meta($user_id, "employee", "False");
 			update_user_meta($user_id, "under_40", "False");
 			update_user_meta($user_id, "guest", "False");
@@ -276,12 +358,15 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 	}
 }
 
-function grp_name_to_list($user_id, $grp_name)
+function grp_name_to_list($user_id, $grp_name, $clubtec_type)
 {
 	error_log(print_r("grp_name_to_list, grp_name: " . $grp_name, true));
 	update_user_meta($user_id, "men_golfing", "False");
 	update_user_meta($user_id, "women_golfing", "False");
+	update_user_meta($user_id, "all_resident", "False");
 	update_user_meta($user_id, "all_homeowner", "False");
+	update_user_meta($user_id, "non_owner", "False");
+	update_user_meta($user_id, "renter", "False");
 	update_user_meta($user_id, "all_golf_club", "False");
 	update_user_meta($user_id, "employee", "False");
 	update_user_meta($user_id, "under_40", "False");
@@ -294,7 +379,7 @@ function grp_name_to_list($user_id, $grp_name)
 	$tokens = explode(",", $grp_name);
 	while (list ($key, $val) = each ($tokens) ) {
 		//echo $val . "\n";
-		error_log(print_r("grp_name_to_list, val: " . $val, true));
+		//error_log(print_r("grp_name_to_list, val: " . $val, true));
 		switch ($val) {
 			case 'Staff':
 			case 'Broadmoor Employee Team':
@@ -304,7 +389,25 @@ function grp_name_to_list($user_id, $grp_name)
 				update_user_meta($user_id, "all_golf_club", "True");
 				break;
 			case 'All Homeowners':
-				update_user_meta($user_id, "all_homeowner", "True");
+				update_user_meta($user_id, "all_resident", "True");
+				$tokens = explode(" ", $clubtec_type);
+				// If it says homeower but the ClubTec type is something other than Homeowner, don't set all_homeower
+				if ($tokens[0] == 'Homeowner' || $tokens[0] == 'Homowner') {
+					update_user_meta($user_id, "all_homeowner", "True");
+				} else {
+					update_user_meta($user_id, "all_homeowner", "False");
+				}
+				break;
+			case 'Renters':
+				//update_user_meta($user_id, "all_homeowner", "True");
+				update_user_meta($user_id, "all_resident", "True");
+				update_user_meta($user_id, "renter", "True");
+				break;
+			case 'Non-Owner':
+			case 'Non-Owner Residents':
+				//update_user_meta($user_id, "all_homeowner", "True");
+				update_user_meta($user_id, "all_resident", "True");
+				update_user_meta($user_id, "non_owner", "True");
 				break;
 			case 'Guest':
 				update_user_meta($user_id, "guest", "True");
@@ -352,8 +455,7 @@ function add_children($user_id, $file, $row) {
 	$fileloc->seek($rowNum);
 	$currentLine = $fileloc->current();
 	while ($currentLine[5] == '2' || $currentLine[5] == '3') {
-		//error_log(print_r("add_children, we have a spouse or child, currentLine: " . $currentLine[4], true));
-		//error_log(print_r($currentLine, true));
+		//error_log(print_r("add_children, we have a spouse or child, currentLine: " . $currentLine[2], true));
 		if ($currentLine[5] == '3') {
 			if (strlen($childrenNames) > 0) {
 				$childrenNames = $childrenNames . ', ' . $currentLine[2];
@@ -362,17 +464,18 @@ function add_children($user_id, $file, $row) {
 			}
 		}
 		//error_log(print_r("add_children, children_names: " . $childrenNames, true));
+		// go to next row
 		$rowNum = $rowNum + 1;
 		$fileloc->seek($rowNum);
 		$currentLine = $fileloc->current();
 		if (!$currentLine) {
-			error_log(print_r("add_children, EOF: " . $childrenNames, true));
+			//error_log(print_r("add_children, EOF: " . $childrenNames, true));
 			break;
 		}
-		if ($rowNum > 5) {
-			error_log(print_r("add_children, break: " . $childrenNames, true));
-			break;
-		}
+		//if ($rowNum > 5) {
+		//	error_log(print_r("add_children, break: " . $childrenNames, true));
+		//	break;
+		//}
 	}
 	//error_log(print_r(">> add_children, children_names: " . $childrenNames, true));
 	update_user_meta($user_id, "children", $childrenNames);
@@ -391,7 +494,7 @@ function add_spouse($user_id, $file, $row, $data) {
 		// ******************************************
 		// get primary member link and add to spouse (this user)
 		// ******************************************
-		//error_log(print_r("add_spouse, row: " . $row, true));
+		error_log(print_r("add_spouse #2, row: " . $row, true));
 		$fileloc = new SplFileObject( $file );
 		$fileloc->setFlags(SplFileObject::READ_CSV | SplFileObject::READ_AHEAD | SplFileObject::DROP_NEW_LINE);
 		$rowNum = intval($row) - 2;
@@ -399,13 +502,18 @@ function add_spouse($user_id, $file, $row, $data) {
 		$currentLine = $fileloc->current();
 		//error_log(print_r("add_spouse, spouse: " . $currentLine[2], true));
 		//error_log(print_r($currentLine, true));
-		$memberEmail = grab_email($currentLine);
-		//error_log(print_r("add_spouse, email: " . $spouseEmail, true));
-		$member = get_user_by( 'email', $memberEmail );
+		$member_base = explode("-", $data[1]);
+		//error_log(print_r("add_spouse, membership_number: " . $member_base[0] . '-000', true));
+		$args = array(
+			'meta_key'     => 'membership_number',
+			'meta_value'   => $member_base[0] . '-000',
+		);
+		$member_list = get_users($args);
+		$member = $member_list[0];
+		//error_log(print_r("add_spouse, member: ", true));
 		//error_log(print_r($member, true));
-		//$spouse_link = get_edit_user_link( $spouse->ID );
 		if ( !function_exists( 'um_user_profile_url' ) ) {
-			error_log(print_r("add_spouse, loading um-short-functions.php", true));
+			//error_log(print_r("add_spouse, loading um-short-functions.php", true));
 			require_once '/core/um-short-functions.php';
 		}
 
@@ -437,6 +545,9 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 	<div class="wrap">
 		<h2>Importing users</h2>	
 		<?php
+		$logFileDirectoryAndName="/var/www/html/wp-content/import.log";
+		$logger = new Logger($logFileDirectoryAndName);
+
 			set_time_limit(0);
 			
 			do_action( 'before_acui_import_users' );
@@ -452,6 +563,9 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			"Title" => "title",
 			"Relationsip" => "relationship",
 			"Birthdate" => "birthday",
+			"HomeEmail" => "home_email",
+			"BusinessEmail" => "business_email",
+			"CorrEmail" => "corr_email",
 			"HomePhone" => "home_phone",
 			"BusinessPhone" => "work_phone",
 			"HomeAddress1" => "home_address",
@@ -501,8 +615,9 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			$headers_filtered = array();
 			$broadmoor_fields_filtered = array();
 			$update_existing_users = $form_data["update_existing_users"];
-			$role = $form_data["role"];
-			$update_roles_existing_users = $form_data["update_roles_existing_users"];
+			//$role = $form_data["role"];
+			//$update_roles_existing_users = $form_data["update_roles_existing_users"];
+			$update_roles_existing_users = 'no';
 			$empty_cell_action = $form_data["empty_cell_action"];
 
 			if( empty( $form_data["activate_users_wp_members"] ) )
@@ -510,7 +625,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			else
 				$activate_users_wp_members = $form_data["activate_users_wp_members"];
 
-		$allow_multiple_accounts = "allowed";
+		$allow_multiple_accounts = "not_allowed";
 /*			if( empty( $form_data["allow_multiple_accounts"] ) )
 				$allow_multiple_accounts = "not_allowed";
 			else
@@ -587,6 +702,9 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 		$headers_filtered[] = 'junior';
 		$headers_filtered[] = 'adv_intermediate';
 		$headers_filtered[] = 'all_homeowner';
+		$headers_filtered[] = 'all_resident';
+		$headers_filtered[] = 'non_owner';
+		$headers_filtered[] = 'renter';
 		$headers_filtered[] = 'employee';
 		$headers_filtered[] = 'guest';
 		$headers_filtered[] = 'children';
@@ -610,25 +728,44 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						continue;
 					endif;
 
+					$email = grab_email($data);  // check $data[11] & $data[12]
+
+					//*********************************************
+					// Preview - check for new and modified
+					//*********************************************
+					if (isset($form_data["preview"])) {
+						$args = array(
+							'meta_key'     => 'membership_number',
+							'meta_value'   => $data[1]
+						);
+						$usersfound = get_users($args);
+						//$usersfound = get_users('membership_number=' . $data[1]);
+						if (count($usersfound) > 0) {
+							if (userChanged($data, $usersfound[0]) || userMetaChanged($data, $usersfound[0])) {
+								error_log(print_r(">>> Updated Member #: " . $data[1] . ", " . $usersfound[0]->data->display_name, true));
+							}
+						} else {
+							if ($data[5] != '3' || $email) {
+								error_log(print_r("+++ New Member #: " . $data[1] . ", " . $data[2] . " " . $data[3], true));
+							}
+						}
+						continue;
+					}
+
 					do_action('pre_acui_import_single_user', $headers, $data );
 					$data = apply_filters('pre_acui_import_single_user_data', $data, $headers);
 
 					$doing_create = false;
 					$send_email = true;
 					$username = composeUsername($data);  // usr_login from ClubTec export
-					$email = grab_email($data);  // check $data[11] & $data[12]
 					error_log(print_r("=========================================", true));
 					error_log(print_r("username: " . $username . ", email: " . $email, true));
 					$user_id = 0;
 					$problematic_row = false;
 					$password_position = $positions["password"];
 					$password = "";
-					$id_position = $positions["id"];
-					
-					if ( !empty( $id_position ) )
-						$id = $data[ $id_position ];
-					else
-						$id = "";
+
+					$id = "";
 
 					$created = true;
 
@@ -644,21 +781,53 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						continue;
 					}
 
-					if( !empty( $id ) ){ // if user have used id
+					//*********************************************
+					// Lookup member number in WordPress
+					//*********************************************
+					error_log(print_r("  Lookup memberNum: " . $data[1], true));
+					$args = array(
+						'meta_key'     => 'membership_number',
+						'meta_value'   => $data[1]
+					);
+					$usersfound = get_users( $args );
+					//error_log(print_r("usersfound: ", true));
+					//error_log(print_r($usersfound, true));
+
+					if (count($usersfound) > 0) {
+						//*********************************************
+						// Member exists, update email address
+						//*********************************************
+						error_log(print_r("  Found memberNum: " . $data[1] . ", updating fields", true));
+						if( $update_existing_users == 'no' ){
+							continue;
+						}
+						$user_id = $usersfound[0]->ID;
+						if( $password !== "" )
+							wp_set_password( $password, $user_id );
+						if( !empty( $email ) ) {
+							$updateEmailArgs = array(
+								'ID'         => $user_id,
+								'user_email' => $email
+							);
+							wp_update_user( $updateEmailArgs );
+						}
+						$created = false;
+					}
+					elseif( !empty( $id ) ){ // if user have used id
+						error_log(print_r("id was supplied: " . $id . ", type: " . gettype($id), true));
+						//*********************************************
+						// ClubTec import never has WordPress user id
+						//*********************************************
 						if( acui_user_id_exists( $id ) ){
 							if( $update_existing_users == 'no' ){
 								continue;
 							}
-
-							// we check if username is the same than in row
+						// we check if username is the same than in row
 							$user = get_user_by( 'ID', $id );
-
 							if( $user->user_login == $username ){
 								$user_id = $id;
-								
 								if( $password !== "" )
 									wp_set_password( $password, $user_id );
-
 								if( !empty( $email ) ) {
 									$updateEmailArgs = array(
 										'ID'         => $user_id,
@@ -666,23 +835,21 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 									);
 									wp_update_user( $updateEmailArgs );
 								}
-
 								$created = false;
 							}
 							else{
 								echo '<script>alert("' . __( 'Problems with ID', 'import-users-from-csv-with-meta' ) . ": $id , " . __( 'username is not the same in the CSV and in database, we are going to skip.', 'import-users-from-csv-with-meta' ) . '");</script>';
 								continue;
 							}
-
 						}
 						else{
 							$userdata = array(
 								'ID'		  =>  $id,
 							    'user_login'  =>  $username,
 							    'user_email'  =>  $email,
-							    'user_pass'   =>  $password
+								'user_pass'   =>  $password,
+								'description' =>  $data[1]
 							);
-
 							error_log(print_r("calling wp_insert_user: ", true));
 							error_log(print_r($userdata, true));
 							$user_id = wp_insert_user( $userdata );
@@ -691,6 +858,10 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						}
 					}
 					elseif( username_exists( $username ) ){ // if user exists, we take his ID by login, we will update his mail if it has changed
+						error_log(print_r("username exists: " . $username, true));
+						//*********************************************
+						// username exists
+						//*********************************************
 						if( $update_existing_users == 'no' ){
 							continue;
 						}
@@ -712,8 +883,10 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						$created = false;
 					}
 					elseif( email_exists( $email ) && $allow_multiple_accounts == "not_allowed" ){ // if the email is registered, we take the user from this and we don't allow repeated emails
-						$doing_create = true;
-						error_log(print_r("doing_create, duplicate email but we are allowing that", true));
+						//*********************************************
+						// Username exists, multiple accounts not allowed
+						//*********************************************
+						error_log(print_r("duplicate email NOT allowed", true));
 						if( $update_existing_users == 'no' ){
 							continue;
 						}
@@ -730,25 +903,33 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 	                    $created = false;
 					}
 					elseif( email_exists( $email ) && $allow_multiple_accounts == "allowed" ){ // if the email is registered and repeated emails are allowed
+						//*********************************************
+						// Username exists, multiple accounts ARE allowed (should not be here)
+						//*********************************************
+						error_log(print_r("doing_create, duplicate email but we are allowing that", true));
 						$hacked_email = acui_hack_email( $email );
 						$user_id = wp_create_user( $username, $password, $hacked_email );
 						acui_hack_restore_remapped_email_address( $user_id, $email );
 					}
 					else{
+						error_log(print_r("email & username not found, memberNum: " . $data[1], true));
 						//*********************************************
 						// This is where the new user create happens
 						//*********************************************
 						$doing_create = true;
 						$email = grab_email($data);
-						//error_log(print_r("wp_create_user, username: " . $username . ", email: " . $email, true));
-						//$user_id = wp_create_user( $username, $password, $email );
-/*						if ($email) {
-							$user_id = wp_create_user($email, $password, $email);
-						} else {
-							$user_id = wp_create_user($username, $password, $email);
-						}*/
 						error_log(print_r("wp_create_user, username: " . $username . ", email: " . $email . ", TypeDesc: " . $data[7], true));
-						$user_id = wp_create_user( $username, $password, $email );
+						//$user_id = wp_create_user( $username, $password, $email );
+						$userdata = array(
+							'ID'		  =>  $id,
+							'user_login'  =>  $username,
+							'user_email'  =>  $email,
+							'user_pass'   =>  $password,
+							'description'    =>  $data[1]
+						);
+						error_log(print_r("calling wp_insert_user 2: ", true));
+						error_log(print_r($userdata, true));
+						$user_id = wp_insert_user( $userdata );
 					}
 
 					if( is_wp_error( $user_id ) ){ // in case the user is generating errors after this checks
@@ -829,15 +1010,14 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												if( !in_array( 'grp_name', $headers ) ) {
 													type_to_list($user_id, $data[$i], $data[31], $data[5]);
 												}
-												switch ($wp_role) {
+/*												switch ($wp_role) {
 													case 'Non-Owner':
 													case 'Renters':
-	  													error_log(print_r("send_email set to false  " . $wp_role, true));
 														$send_email = false;
 														break;
-												}
-												error_log(print_r("setting roles to " . $wp_role . ", send_email: " . $send_email . ", input role: " . $data[$i], true));
-												wp_update_user( array( 'ID' => $user_id, 'role' => $wp_role) );
+												}*/
+												//error_log(print_r("setting roles to " . $wp_role . ", send_email: " . $send_email . ", input role: " . $data[$i], true));
+												wp_update_user( array( 'ID' => $user_id, 'role' => strtolower($wp_role)) );
 												update_user_meta( $user_id, "role", strtolower($wp_role) );
 												update_user_meta($user_id, "clubtec_account_type", $data[$i]);
 												add_children($user_id, $file, $row);
@@ -865,6 +1045,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												break;
 											case 'HomeEmail':
 												wp_update_user( array( 'ID' => $user_id, 'user_email' => grab_email($data) ) );
+												update_user_meta($user_id, "home_email", $data[$i]);
 												break;
 											case 'account_type':
 												$wp_role = type_to_role($data[ $i ]);
@@ -914,14 +1095,14 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 										//error_log(print_r(">> Misc fields " . $headers[$i] . ', data: ' . $data[$i], true));
 										switch ($headers[$i]) {
 											case "MemberNumber":
-											    //error_log(print_r("MemberNumber " . $data[$i], true));
+											    error_log(print_r("MemberNumber " . $data[$i], true));
 												//update_user_meta($user_id, "Membership Number", $data[$i]);
 												update_user_meta($user_id, "membership_number", $data[$i]);
 												update_user_meta($user_id, "show_admin_bar_front", "false");
 												break;
 											case "grp_name":
-												error_log(print_r("grp_name found", true));
-												grp_name_to_list($user_id, $data[$i]);
+												//error_log(print_r("grp_name found", true));
+												grp_name_to_list($user_id, $data[$i], $data[7]);
 												break;
 											case "Gender":
 												$gender = 'male';
@@ -935,6 +1116,12 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												//error_log(print_r("Gender " . $data[$i] . " convert to: " . $genderCaps, true));
 												update_user_meta($user_id, "gender", $genderCaps);
 												//update_user_meta($user_id, "Gender", $genderCaps);
+												break;
+											case 'BusinessEmail':
+												update_user_meta($user_id, "business_email", $data[$i]);
+												break;
+											case 'CorrEmail':
+												update_user_meta($user_id, "corr_email", $data[$i]);
 												break;
 											case "Relationship":
 												update_user_meta($user_id, "relationship", $data[$i]);
@@ -1029,30 +1216,28 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						endfor;
 					}
 
-					if ($doing_create) {
-						error_log(print_r("Invoking mailchimp_user_create for " . $user_id . '/' . $user_object->user_login, true));
-						//do_action('integral_mailchimp_user_create', $user_id);
-					} else {
-						error_log(print_r("Invoking mailchimp_user_update for " . $user_id . '/' . $user_object->user_login, true));
-						//do_action('integral_mailchimp_user_update', $user_id, $user_object);
-					}
-
 					$styles = "";
 					if( $problematic_row )
 						$styles = "background-color:red; color:white;";
 
 					echo "<tr style='$styles' ><td>" . ($row - 1) . "</td>";
-					foreach ($data as $key=>$element) {
+					$logmsg = '';
+					foreach ($data as $key => $element) {
 						//error_log(print_r("Report, key " . $headers[$key] . ', element: ' . $element, true));
-						if(in_array($headers[$key], $report_fields)) {
+						if (in_array($headers[$key], $report_fields)) {
 							//error_log(print_r("Match >> " . $headers[$key] . ', element: ' . $element, true));
 							echo "<td>$element</td>";
+							$logmsg .= $element . " ";
+						}
 					}
-						}
 
-						if ($doing_create) {
-							echo "<td>**Insert**</td>";
-						}
+					if ($doing_create) {
+						echo "<td>**Insert**</td>";
+						$logmsg .= "*I*";
+					}
+					$logger->AddRow($logmsg);
+					$logger->Commit();
+					$logmsg = '';
 
 					echo "</tr>\n";
 
@@ -1113,7 +1298,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 							add_filter( 'wp_mail_from', 'acui_mail_from' );
 							add_filter( 'wp_mail_from_name', 'acui_mail_from_name' );
 
-							error_log(print_r("about to call wp_mail(1), send_email:  " . $send_email, true));
+							//error_log(print_r("about to call wp_mail(1), send_email:  " . $send_email, true));
 							if ($send_email) {
 								wp_mail( $email, $subject, $body_mail );
 							}
@@ -1125,7 +1310,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						else
 							error_log(print_r("about to call wp_mail(2), send_email:  " . $send_email, true));
 							if ($send_email) {
-								error_log(print_r("doing send...", true));
+								//error_log(print_r("doing send...", true));
 								wp_mail( $email, $subject, $body_mail );
 							}
 
@@ -1142,6 +1327,18 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 
 				$row++;						
 			endwhile;
+
+			//*********************************************
+			// Preview - check for deletes
+			//*********************************************
+			if (isset($form_data["preview"])) {
+				$all_users = get_users(array('fields' => array('ID')));
+				//$all_users = get_users();
+				//$meta = get_user_meta( $user_id, 'membership_number' );
+				error_log(print_r("--- Deleted Member #: " . $data[1] . ", " . $data[2] . " " . $data[3], true));
+				error_log(print_r("all_users: ", true));
+				error_log(print_r($all_users, true));
+			}
 
 			if( $attach_id != 0 )
 				wp_delete_attachment( $attach_id );
@@ -1255,7 +1452,7 @@ function acui_options()
 		<?php endif; ?>	
 
 		<div style="float:left; width:80%;">
-			<h2><?php _e( 'Import users from ClubTec CSV (v0.2)','import-users-from-csv-with-meta' ); ?></h2>
+			<h2><?php _e( 'Import users from ClubTec CSV (v1.83, Feb 22, 2017)','import-users-from-csv-with-meta' ); ?></h2>
 		</div>
 
 		<div style="clear:both;"></div>
@@ -1264,6 +1461,9 @@ function acui_options()
 			<form method="POST" enctype="multipart/form-data" action="" accept-charset="utf-8" onsubmit="return check();">
 			<table class="form-table">
 				<tbody>
+				<tr class="form-field form-required">
+					<h4><?php _e( 'Preview only?', 'import-users-from-csv-with-meta' ); ?> <input type="checkbox" name="preview" value = "<?php _e( 'yes', 'import-users-from-csv-with-meta' ); ?>" ></h4>
+				</tr>
 				<tr class="form-field form-required">
 					<th scope="row"><label><?php _e( 'CSV file <span class="description">(required)</span></label>', 'import-users-from-csv-with-meta' ); ?></th>
 					<td>
