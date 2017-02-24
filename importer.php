@@ -122,6 +122,13 @@ function userChanged($data, $userdata) {
 	return false;
 }
 
+//userMetaFieldChanged($user_id, "role", $all_user_meta, strtolower($wp_role), false);
+function userMetaFieldChanged($user_id, $field, $all_user_meta, $newval, $preview) {
+	if ($all_user_meta[$field][0])
+	update_user_meta( $user_id, "role", strtolower($wp_role) );
+	return false;
+}
+
 function userMetaChanged($data, $userdata) {
 	return false;
 }
@@ -643,11 +650,6 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			else
 				$allow_multiple_accounts = $form_data["allow_multiple_accounts"];*/
 
-			if( empty( $form_data["approve_users_new_user_appove"] ) )
-				$approve_users_new_user_appove = "no_approve";
-			else
-				$approve_users_new_user_appove = $form_data["approve_users_new_user_appove"];
-	
 			echo "<h3>" . __('Ready to registers','import-users-from-csv-with-meta') . "</h3>";
 			echo "<p>" . __('First row represents the form of sheet','import-users-from-csv-with-meta') . "</p>";
 			$row = 0;
@@ -817,7 +819,9 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						if( $update_existing_users == 'no' ){
 							continue;
 						}
+						$user_object = $usersfound[0];
 						$user_id = $usersfound[0]->ID;
+						$all_user_meta = get_user_meta( $user_id );
 						if( $password !== "" )
 							wp_set_password( $password, $user_id );
 						if( !empty( $email ) ) {
@@ -981,17 +985,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						}
 					}
 
-					// WP Members activation
-					if( $activate_users_wp_members == "activate" )
-						update_user_meta( $user_id, "active", true );
-
-					// New User Approve
-					if( $approve_users_new_user_appove == "approve" )
-						update_user_meta( $user_id, "approved", true );
-					else
-						update_user_meta( $user_id, "pending", true );
-						
-					if($columns > 2){
+					if($columns > 2) {
+						error_log(print_r("Timestamp - About to walk columns", true));
 						//*********************************************
 						// Walk the columns of each row
 						//*********************************************
@@ -1037,6 +1032,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												}*/
 												//error_log(print_r("setting roles to " . $wp_role . ", send_email: " . $send_email . ", input role: " . $data[$i], true));
 												wp_update_user( array( 'ID' => $user_id, 'role' => strtolower($wp_role)) );
+												//userMetaFieldChanged($user_id, "role", $all_user_meta, strtolower($wp_role), false);
 												update_user_meta( $user_id, "role", strtolower($wp_role) );
 												update_user_meta($user_id, "clubtec_account_type", $data[$i]);
 												$member_base = explode("-", $data[1]);
@@ -1044,24 +1040,36 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												add_spouse($user_id, $file, $row, $data);
 												break;
 											case 'FirstName':
-												$nickname = $data[$i][0] . $data[$i + 1];
-												$displayname = $data[ $i ] . ' ' . $data[$i + 1];
 												//error_log(print_r("FirstName #1 " . $data[$i] . ", nickname: " . $nickname . ", display_name: " . $displayname . ", composeUsername: " . composeUsername($data), true));
-												wp_update_user( array( 'ID' => $user_id, 'first_name' => clean_name($data[$i]) ) );
-												wp_update_user( array( 'ID' => $user_id, 'display_name' => clean_name($data[$i]) . ' ' . $data[$i + 1] ) );
-												wp_update_user( array( 'ID' => $user_id, 'nickname' => $data[ $i ][0] . $data[$i + 1] ) );
-												wp_update_user( array( 'ID' => $user_id, 'user_login' => composeUsername($data) ) );
+												error_log(print_r("   Timestamp - FirstName", true));
+												//error_log(print_r($user_object, true));
+												//wp_update_user( array( 'ID' => $user_id, 'first_name' => clean_name($data[$i]) ) );
+												if ($user_object->first_name != $data[$i]) {
+													wp_update_user( array( 'ID' => $user_id, 'first_name' => $data[ $i ] ) );
+												}
+												error_log(print_r("   Timestamp - FirstName Done", true));
 												break;
 											case 'LastName':
+												error_log(print_r("   Timestamp - LastName: " . $user_object->last_name . ", " . $user_object->ID, true));
 												//error_log(print_r("LastName: " . $data[ $i ], true ));
-												wp_update_user( array( 'ID' => $user_id, 'last_name' => $data[ $i ] ) );
+												if ($user_object->last_name != $data[$i]) {
+													wp_update_user( array( 'ID' => $user_id, 'last_name' => $data[ $i ] ) );
+												}
 												$nickname = $data[$i-1][0] . $data[$i];
 												$displayname = clean_name($data[ $i-1 ]) . ' ' . $data[$i];
 												//error_log(print_r("FirstName #2 " . $data[$i-1] . ", nickname: " . $nickname . ", display_name: " . $displayname . ", composeUsername: " . composeUsername($data), true));
-												wp_update_user( array( 'ID' => $user_id, 'first_name' => clean_name($data[$i-1])) );
-												wp_update_user( array( 'ID' => $user_id, 'display_name' => $displayname ) );
-												wp_update_user( array( 'ID' => $user_id, 'nickname' => $nickname ) );
-												wp_update_user( array( 'ID' => $user_id, 'user_login' => composeUsername($data) ) );
+												//wp_update_user( array( 'ID' => $user_id, 'first_name' => clean_name($data[$i-1])) );
+												if ($user_object->display_name != $displayname) {
+													wp_update_user( array( 'ID' => $user_id, 'display_name' => $displayname ) );
+												}
+												if ($user_object->nickname != $nickname) {
+													wp_update_user( array( 'ID' => $user_id, 'nickname' => $nickname ) );
+												}
+												$username = composeUsername($data);
+												if ($user_object->user_login != $username) {
+													wp_update_user( array( 'ID' => $user_id, 'user_login' => $username ) );
+												}
+												error_log(print_r("   Timestamp - LastName Done", true));
 												break;
 											case 'HomeEmail':
 												wp_update_user( array( 'ID' => $user_id, 'user_email' => grab_email($data) ) );
@@ -1234,6 +1242,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 							}
 						endfor;
 					}
+					error_log(print_r("Timestamp - columns done", true));
 
 					$styles = "";
 					if( $problematic_row )
