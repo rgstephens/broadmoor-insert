@@ -10,7 +10,7 @@ class Logger
 	public function __construct($file, $endRow = "\n", $writeFlag = FILE_APPEND)
 	{
 		$this->file = $file;
-		$this->writeFlag = $writeFlag;
+		//$this->writeFlag = $writeFlag;
 		$this->endRow = $endRow;
 	}
 
@@ -130,6 +130,22 @@ function userMetaFieldChanged($user_id, $field, $all_user_meta, $newval, $previe
 }
 
 function userMetaChanged($data, $userdata) {
+	return false;
+}
+
+function existing_email($existing_email, $data) {
+	error_log(print_r("check existing_email: " . $existing_email, true));
+	error_log(print_r("  17: " . $data[17] . ", 27: " . $data[27] . ", 33: " . $data[33], true));
+	if ($existing_email == $data[17]) {
+		error_log(print_r("  match 17: " . $data[17], true));
+		return true;
+	} else if ($existing_email == $data[27]) {
+		error_log(print_r("  match 27: " . $data[27], true));
+		return true;
+	} else if ($existing_email == $data[33]) {
+		error_log(print_r("  match 33: " . $data[33], true));
+		return true;
+	}
 	return false;
 }
 
@@ -777,7 +793,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 					$send_email = true;
 					$username = composeUsername($data);  // usr_login from ClubTec export
 					error_log(print_r("=========================================", true));
-					error_log(print_r("username: " . $username . ", email: " . $email . ", memberNum: " . $data[1], true));
+					error_log(print_r("CSV Name: " . $data[2] . " " . $data[3] . ", memberNum: " . $data[1], true));
 					$user_id = 0;
 					$problematic_row = false;
 					$password_position = $positions["password"];
@@ -815,22 +831,15 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						//*********************************************
 						// Member exists, update email address
 						//*********************************************
-						error_log(print_r("  Found memberNum: " . $data[1] . ", updating fields", true));
+						$user_object = $usersfound[0];
+						$user_id = $user_object->ID;
+						error_log(print_r("  Found memberNum: " . $data[1] . ", user_email: " . $user_object->user_email, true));
 						if( $update_existing_users == 'no' ){
 							continue;
 						}
-						$user_object = $usersfound[0];
-						$user_id = $usersfound[0]->ID;
 						$all_user_meta = get_user_meta( $user_id );
 						if( $password !== "" )
 							wp_set_password( $password, $user_id );
-						if( !empty( $email ) ) {
-							$updateEmailArgs = array(
-								'ID'         => $user_id,
-								'user_email' => $email
-							);
-							wp_update_user( $updateEmailArgs );
-						}
 						$created = false;
 					}
 					elseif( !empty( $id ) ){ // if user have used id
@@ -891,14 +900,6 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 
 						if( $password !== "" )
 							wp_set_password( $password, $user_id );
-
-						if( !empty( $email ) ) {
-							$updateEmailArgs = array(
-								'ID'         => $user_id,
-								'user_email' => $email
-							);
-							wp_update_user( $updateEmailArgs );
-						}
 
 						$created = false;
 					}
@@ -986,7 +987,6 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 					}
 
 					if($columns > 2) {
-						error_log(print_r("Timestamp - About to walk columns", true));
 						//*********************************************
 						// Walk the columns of each row
 						//*********************************************
@@ -1041,16 +1041,13 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												break;
 											case 'FirstName':
 												//error_log(print_r("FirstName #1 " . $data[$i] . ", nickname: " . $nickname . ", display_name: " . $displayname . ", composeUsername: " . composeUsername($data), true));
-												error_log(print_r("   Timestamp - FirstName", true));
 												//error_log(print_r($user_object, true));
 												//wp_update_user( array( 'ID' => $user_id, 'first_name' => clean_name($data[$i]) ) );
 												if ($user_object->first_name != $data[$i]) {
 													wp_update_user( array( 'ID' => $user_id, 'first_name' => $data[ $i ] ) );
 												}
-												error_log(print_r("   Timestamp - FirstName Done", true));
 												break;
 											case 'LastName':
-												error_log(print_r("   Timestamp - LastName: " . $user_object->last_name . ", " . $user_object->ID, true));
 												//error_log(print_r("LastName: " . $data[ $i ], true ));
 												if ($user_object->last_name != $data[$i]) {
 													wp_update_user( array( 'ID' => $user_id, 'last_name' => $data[ $i ] ) );
@@ -1069,10 +1066,13 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												if ($user_object->user_login != $username) {
 													wp_update_user( array( 'ID' => $user_id, 'user_login' => $username ) );
 												}
-												error_log(print_r("   Timestamp - LastName Done", true));
 												break;
 											case 'HomeEmail':
-												wp_update_user( array( 'ID' => $user_id, 'user_email' => grab_email($data) ) );
+												// if one of the existing user emails is NOT already used as the primary email, set home email to primary
+												error_log(print_r(" HomeEmail, existing user_email: " . $user_object->user_email, true));
+												if (!existing_email($user_object->user_email, $data)) {
+													wp_update_user( array( 'ID' => $user_id, 'user_email' => grab_email($data) ) );
+												}
 												update_user_meta($user_id, "home_email", $data[$i]);
 												break;
 											case 'account_type':
@@ -1080,9 +1080,14 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												wp_update_user( array( 'ID' => $user_id, 'role' => $wp_role) );
 												update_user_meta( $user_id, "role", strtolower($wp_role) );
 												update_user_meta($user_id, "clubtec_account_type", $data[$i]);
+												//userMetaFieldChanged($user_id, "role", $all_user_meta, strtolower($wp_role), false);
+												//userMetaFieldChanged($user_id, "clubtec_account_type", $all_user_meta, $data[$i], false);
 												break;
 											case 'usr_email':
-												wp_update_user( array( 'ID' => $user_id, 'user_email' => grab_email($data) ) );
+												error_log(print_r(" usr_email, existing user_email: " . $user_object->user_email, true));
+												if (!existing_email($user_object->user_email, $data)) {
+													wp_update_user( array( 'ID' => $user_id, 'user_email' => grab_email($data) ) );
+												}
 												break;
 											case 'usr_login':
 												wp_update_user( array( 'ID' => $user_id, 'user_login' => $data[ $i ] ) );
@@ -1242,7 +1247,6 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 							}
 						endfor;
 					}
-					error_log(print_r("Timestamp - columns done", true));
 
 					$styles = "";
 					if( $problematic_row )
@@ -1261,7 +1265,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 
 					if ($doing_create) {
 						echo "<td>**Insert**</td>";
-						$logmsg .= "*I*";
+						$logmsg .= "* New *";
 					}
 					$logger->AddRow($logmsg);
 					$logger->Commit();
@@ -1362,6 +1366,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			if (isset($form_data["preview"])) {
 				$all_users = get_users(array('fields' => array('ID')));
 				//$all_users = get_users();
+				// For each user, get membership_number and append to new array
+				// Compare membership_number array with imported membership numbers
 				//$meta = get_user_meta( $user_id, 'membership_number' );
 				error_log(print_r("--- Deleted Member #: " . $data[1] . ", " . $data[2] . " " . $data[3], true));
 				error_log(print_r("all_users: ", true));
@@ -1480,7 +1486,7 @@ function acui_options()
 		<?php endif; ?>	
 
 		<div style="float:left; width:80%;">
-			<h2><?php _e( 'Import users from ClubTec CSV (v1.90, Feb 23, 2017)','import-users-from-csv-with-meta' ); ?></h2>
+			<h2><?php _e( 'Import users from ClubTec CSV (v1.92, Feb 25, 2017)','import-users-from-csv-with-meta' ); ?></h2>
 		</div>
 
 		<div style="clear:both;"></div>

@@ -1,3 +1,8 @@
+## Apache
+
+Logs: `/var/log/apache2`
+Config: `/etc/apache2/sites-available`
+
 ## Notes on importer.php
 
 Notes on how the script works, key variables and calls.
