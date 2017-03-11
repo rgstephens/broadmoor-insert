@@ -37,6 +37,148 @@ class Logger
 	}
 }
 
+class MC4WP_Debug_Log_Reader {
+
+	/**
+	 * @var resource|null
+	 */
+	private $handle;
+
+	/**
+	 * @var string
+	 */
+	private static $regex = '/^(\[[\d \-\:]+\]) (\w+\:) (.*)$/S';
+
+	/**
+	 * @var string
+	 */
+	private static $html_template = '<span class="time">$1</span> <span class="level">$2</span> <span class="message">$3</span>';
+
+	/**
+	 * @var string The log file location.
+	 */
+	private $file;
+
+	/**
+	 * MC4WP_Debug_Log_Reader constructor.
+	 *
+	 * @param $file
+	 */
+	public function __construct( $file ) {
+		$this->file = $file;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function all() {
+		return file_get_contents( $this->file );
+	}
+
+	/**
+	 * Sets file pointer to $n of lines from the end of file.
+	 *
+	 * @param int $n
+	 */
+	private function seek_line_from_end( $n ) {
+		$line_count = 0;
+
+		// get line count
+		while( ! feof( $this->handle ) ) {
+			fgets( $this->handle );
+			$line_count++;
+		}
+
+		// rewind to beginning
+		rewind( $this->handle );
+
+		// calculate target
+		$target = $line_count - $n;
+		$target = $target > 1 ? $target : 1; // always skip first line because oh PHP header
+		$current = 0;
+
+		// keep reading until we're at target
+		while( $current < $target ) {
+			fgets( $this->handle );
+			$current++;
+		}
+	}
+
+	/**
+	 * @return string|null
+	 */
+	public function read() {
+
+		// open file if not yet opened
+		if( ! is_resource( $this->handle ) ) {
+
+			// doesn't exist?
+			if( ! file_exists( $this->file ) ) {
+				return null;
+			}
+
+			$this->handle = @fopen( $this->file, 'r' );
+
+			// unable to read?
+			if( ! is_resource( $this->handle ) ) {
+				return null;
+			}
+
+			// set pointer to 1000 files from EOF
+			$this->seek_line_from_end( 1000 );
+		}
+
+		// stop reading once we're at the end
+		if( feof( $this->handle ) ) {
+			fclose( $this->handle );
+			$this->handle = null;
+			return null;
+		}
+
+		// read line, up to 8kb
+		$text = fgets( $this->handle );
+
+		return $text;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function read_as_html() {
+		$line = $this->read();
+
+		if( is_null( $line ) ) {
+			return null;
+		}
+
+		$line = preg_replace( self::$regex, self::$html_template, $line );
+		return $line;
+	}
+
+	/**
+	 * Reads X number of lines.
+	 *
+	 * If $start is negative, reads from end of log file.
+	 *
+	 * @param int $start
+	 * @param int $number
+	 * @return string
+	 */
+	public function lines( $start, $number ) {
+		$handle = fopen( $start, 'r' );
+		$lines = '';
+
+		$current_line = 0;
+		while( $current_line < $number ) {
+			$lines .= fgets( $handle );
+		}
+
+		fclose( $handle );
+		return $lines;
+	}
+
+}
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 function clean_name($value) {
@@ -62,6 +204,37 @@ function first_middleinit($value) {
 
 function clean_string($value) {
 	return str_replace('.', '', str_replace('-', '', str_replace('\'', '', str_replace(' ', '', $value))));
+}
+
+function write_import_summary_line($change_type, $memnum, $name) {
+	$styles = "";
+	if ($change_type == 'i') {
+		$styles = "background-color:LightGreen; color:black;";
+	} elseif ($change_type == 'd') {
+		$styles = "background-color:red; color:white;";
+	}
+
+	echo "<tr style='$styles' >";
+	if ($change_type == 'i') {
+		echo "<td>New</td>";
+	} elseif ($change_type == 'd') {
+		echo "<td>Delete</td>";
+	}
+	echo "<td>" . $memnum . "</td>" . "<td>" . $name . "</td>";
+	echo "</tr>\n";
+}
+
+function echo_deleted_members($deleted_members) {
+	// Display the members to be deleted
+	foreach ($deleted_members as &$value) {
+		$args = array(
+			'meta_key'     => 'membership_number',
+			'meta_value'   => $value
+		);
+		$usersfound = get_users( $args );
+		error_log(print_r("--- Delete " . $value . ", " . $usersfound[0]->data->display_name, true));
+		write_import_summary_line('d', $value, $usersfound[0]->data->display_name);
+	}
 }
 
 function composeUsername($data) {
@@ -134,16 +307,16 @@ function userMetaChanged($data, $userdata) {
 }
 
 function existing_email($existing_email, $data) {
-	error_log(print_r("check existing_email: " . $existing_email, true));
-	error_log(print_r("  17: " . $data[17] . ", 27: " . $data[27] . ", 33: " . $data[33], true));
+	//error_log(print_r("check existing_email: " . $existing_email, true));
+	error_log(print_r(" emails Home: " . $data[17] . ", Work: " . $data[27] . ", Corr: " . $data[33], true));
 	if ($existing_email == $data[17]) {
-		error_log(print_r("  match 17: " . $data[17], true));
+		//error_log(print_r("  match 17: " . $data[17], true));
 		return true;
 	} else if ($existing_email == $data[27]) {
-		error_log(print_r("  match 27: " . $data[27], true));
+		//error_log(print_r("  match 27: " . $data[27], true));
 		return true;
 	} else if ($existing_email == $data[33]) {
-		error_log(print_r("  match 33: " . $data[33], true));
+		//error_log(print_r("  match 33: " . $data[33], true));
 		return true;
 	}
 	return false;
@@ -332,6 +505,7 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			break;
 		case 'Homowner':
 		case 'Homeowner':
+		    //error_log(print_r("setting all_homeowner to true for user: " . $user_id, true));
 			update_user_meta($user_id, "all_resident", "True");
 			update_user_meta($user_id, "all_homeowner", "True");
 			update_user_meta($user_id, "non_owner", "False");
@@ -346,6 +520,7 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "adv_intermediate", "False");
 			update_user_meta($user_id, "opt_in_bha", "True");
 			update_user_meta($user_id, "opt_in_bgc", "False");
+			break;
 		case 'Non-Resident':
 		case 'Non-Owner':
 			update_user_meta($user_id, "all_resident", "True");
@@ -362,7 +537,9 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "adv_intermediate", "False");
 			update_user_meta($user_id, "opt_in_bha", "True");
 			update_user_meta($user_id, "opt_in_bgc", "False");
+			break;
 		case 'Renters':
+			error_log(print_r("setting renter to true for user: " . $user_id, true));
 			update_user_meta($user_id, "all_resident", "True");
 			update_user_meta($user_id, "all_homeowner", "False");
 			update_user_meta($user_id, "non_owner", "False");
@@ -379,6 +556,7 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "opt_in_bgc", "False");
 			break;
 	}
+	//error_log(print_r("all_homeowner set to: " . get_user_meta($user_id, 'all_homeowner'), true));
 }
 
 function grp_name_to_list($user_id, $grp_name, $clubtec_type)
@@ -666,8 +844,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			else
 				$allow_multiple_accounts = $form_data["allow_multiple_accounts"];*/
 
-			echo "<h3>" . __('Ready to registers','import-users-from-csv-with-meta') . "</h3>";
-			echo "<p>" . __('First row represents the form of sheet','import-users-from-csv-with-meta') . "</p>";
+			//echo "<h3>" . __('Ready to registers','import-users-from-csv-with-meta') . "</h3>";
+			//echo "<p>" . __('First row represents the form of sheet','import-users-from-csv-with-meta') . "</p>";
 			$row = 0;
 			$positions = array();
 
@@ -676,6 +854,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			$delimiter = acui_detect_delimiter( $file );
 
 			$manager = new SplFileObject( $file );
+			$csv_member_numbers = array();
 			while ( $data = $manager->fgetcsv( $delimiter ) ):
 				if( empty($data[0]) )
 					continue;
@@ -745,11 +924,15 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 
 		//error_log(print_r("calling acui_columns: ", true));
 		//error_log(print_r($headers_filtered, true));
-					update_option( "acui_columns", $headers_filtered );
-					?>
-					<h3><?php _e( 'Inserting and updating data', 'import-users-from-csv-with-meta' ); ?></h3>
+		update_option( "acui_columns", $headers_filtered );
+		if (isset($form_data["preview"])) {
+			echo "<h3><span style='background-color:red; color:white;'>Preview</span> Inserting and updating data <span style='background-color:red; color:white;'>Preview</span></h3>";
+		} else {
+			echo "<h3>Inserting and updating data</h3>";
+		}
+		?>
 					<table>
-						<tr><th><?php _e( 'Row', 'import-users-from-csv-with-meta' ); ?></th><?php foreach( $headers as $element ) if (in_array($element, $report_fields)) { echo "<th>" . $element . "</th>"; } ?></tr>
+						<tr><th>Action</th><th>Member#</th><th>Name</th></tr>
 					<?php
 					$row++;
 				else:
@@ -765,6 +948,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 					//*********************************************
 					if (isset($form_data["preview"])) {
 						if ($data[5] != '3') {
+							array_push($csv_member_numbers, $data[1]);
+							//$csv_member_numbers[] = array('membership_number' => $data[1], 'first_name' => $data[2], 'last_name' => $data[3]);
 							$args = array(
 								'meta_key'     => 'membership_number',
 								'meta_value'   => $data[1]
@@ -789,7 +974,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 					do_action('pre_acui_import_single_user', $headers, $data );
 					$data = apply_filters('pre_acui_import_single_user_data', $data, $headers);
 
-					$doing_create = false;
+					//$doing_create = false;
 					$send_email = true;
 					$username = composeUsername($data);  // usr_login from ClubTec export
 					error_log(print_r("=========================================", true));
@@ -940,7 +1125,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						//*********************************************
 						// This is where the new user create happens
 						//*********************************************
-						$doing_create = true;
+						//$doing_create = true;
+						write_import_summary_line('i', $data[1], $data[2] . " " . $data[3]);
 						$email = grab_email($data);
 						error_log(print_r("wp_create_user, username: " . $username . ", email: " . $email . ", TypeDesc: " . $data[7], true));
 						//$user_id = wp_create_user( $username, $password, $email );
@@ -1030,9 +1216,11 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 														$send_email = false;
 														break;
 												}*/
-												//error_log(print_r("setting roles to " . $wp_role . ", send_email: " . $send_email . ", input role: " . $data[$i], true));
-												wp_update_user( array( 'ID' => $user_id, 'role' => strtolower($wp_role)) );
-												//userMetaFieldChanged($user_id, "role", $all_user_meta, strtolower($wp_role), false);
+												error_log(print_r("setting role to " . $wp_role . ", for userid: " . $user_id . ", send_email: " . $send_email . ", input role: " . $data[$i], true));
+												wp_update_user( array( 'ID' => $user_id, 'role' => $wp_role) );
+												//wp_update_user( array( 'ID' => $user_id, 'role' => strtolower($wp_role)) );
+												//$user_id_role = new WP_User($user_id);
+												//$user_id_role->set_role(strtolower($wp_role));												//userMetaFieldChanged($user_id, "role", $all_user_meta, strtolower($wp_role), false);
 												update_user_meta( $user_id, "role", strtolower($wp_role) );
 												update_user_meta($user_id, "clubtec_account_type", $data[$i]);
 												$member_base = explode("-", $data[1]);
@@ -1205,15 +1393,15 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												break;
 											case "usr_address_a":
 											case "BusinessAddress1":
-												update_user_meta($user_id, "work_Address", $data[$i]);
+												update_user_meta($user_id, "work_address", $data[$i]);
 												break;
 											case "usr_address2_a":
 											case "BusinessAddress2":
-												update_user_meta($user_id, "work_Address 2", $data[$i]);
+												update_user_meta($user_id, "work_address 2", $data[$i]);
 												break;
 											case "usr_state_a":
 											case "BusinessState":
-												update_user_meta($user_id, "work_State", $data[$i]);
+												update_user_meta($user_id, "work_state", $data[$i]);
 												break;
 											case "usr_city_a":
 											case "BusinessCity":
@@ -1248,7 +1436,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						endfor;
 					}
 
-					$styles = "";
+/*					$styles = "";
 					if( $problematic_row )
 						$styles = "background-color:red; color:white;";
 
@@ -1262,16 +1450,16 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 							$logmsg .= $element . " ";
 						}
 					}
+					echo "</tr>\n";
 
-					if ($doing_create) {
-						echo "<td>**Insert**</td>";
-						$logmsg .= "* New *";
-					}
 					$logger->AddRow($logmsg);
 					$logger->Commit();
-					$logmsg = '';
+					$logmsg = '';*/
 
-					echo "</tr>\n";
+					// write insert record
+/*					if ($doing_create) {
+						write_import_summary_line('i', $data[1], $data[2] . " " . $data[3]);
+					}*/
 
 					flush();
 
@@ -1340,7 +1528,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 							remove_action( 'phpmailer_init', 'acui_mailer_init' );
 						}
 						else
-							error_log(print_r("about to call wp_mail(2), send_email:  " . $send_email, true));
+							//error_log(print_r("about to call wp_mail(2), send_email:  " . $send_email, true));
 							if ($send_email) {
 								//error_log(print_r("doing send...", true));
 								wp_mail( $email, $subject, $body_mail );
@@ -1363,22 +1551,46 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			//*********************************************
 			// Preview - check for deletes
 			//*********************************************
+			// Create array of member_numbers in WordPress DB
+			$wp_member_numbers = [];
+			$all_users = get_users(array('fields' => array('ID')));
+			foreach ($all_users as &$value) {
+				$meta = get_user_meta($value->ID, 'membership_number');
+				//error_log(print_r($value->ID . " > " . $meta[0], true));
+				if ($meta && $meta[0]) {
+					array_push($wp_member_numbers, $meta[0]);
+				}
+			}
+			$deleted_members = array_diff($wp_member_numbers, $csv_member_numbers);
+
 			if (isset($form_data["preview"])) {
-				$all_users = get_users(array('fields' => array('ID')));
-				//$all_users = get_users();
-				// For each user, get membership_number and append to new array
-				// Compare membership_number array with imported membership numbers
-				//$meta = get_user_meta( $user_id, 'membership_number' );
-				error_log(print_r("--- Deleted Member #: " . $data[1] . ", " . $data[2] . " " . $data[3], true));
-				error_log(print_r("all_users: ", true));
-				//error_log(print_r($all_users, true));
+				$new_members = array_diff($csv_member_numbers, $wp_member_numbers);
+
+				echo "<table><tbody>";
+				// Display the new member entries
+				foreach ($new_members as $key => $value) {
+					$manager->seek($key);
+					$data = $manager->fgetcsv( $delimiter );
+					$logger->AddRow("+++ New " . $value . ", " . $data[2] . " " . $data[3]);
+					error_log(print_r("+++ New " . $value . ", " . $data[2] . " " . $data[3], true));
+					write_import_summary_line('i', $value, $data[2] . " " . $data[3]);
+				}
+				$logger->Commit();
+
+				echo_deleted_members($deleted_members);
+
+				echo "</tbody></>";
+			} else {
+				// display deleted members for normal (non-preview) run
+				$deleted_members = array_diff($wp_member_numbers, $csv_member_numbers);
+				echo_deleted_members($deleted_members);
 			}
 
 			if( $attach_id != 0 )
 				wp_delete_attachment( $attach_id );
 
 			// delete all users that have not been imported
-			if( $is_cron && get_option( "acui_cron_delete_users" ) ):
+/*			if( $is_cron && get_option( "acui_cron_delete_users" ) ):
 				$all_users = get_users( array( 'fields' => array( 'ID' ) ) );
 				$cron_delete_users_assign_posts = get_option( "acui_cron_delete_users_assign_posts");
 				
@@ -1392,7 +1604,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 						}						
 					}
 				}
-			endif;
+			endif;*/
 
 			?>
 			</table>
@@ -1486,7 +1698,7 @@ function acui_options()
 		<?php endif; ?>	
 
 		<div style="float:left; width:80%;">
-			<h2><?php _e( 'Import users from ClubTec CSV (v1.92, Feb 25, 2017)','import-users-from-csv-with-meta' ); ?></h2>
+			<h2><?php _e( 'Import users from ClubTec CSV (v2.01, Mar 9, 2017)','import-users-from-csv-with-meta' ); ?></h2>
 		</div>
 
 		<div style="clear:both;"></div>
@@ -1649,7 +1861,26 @@ function acui_options()
 
 			<input class="button-primary" type="submit" name="uploadfile" id="uploadfile_btn" value="<?php _e( 'Start importing', 'import-users-from-csv-with-meta' ); ?>"/>
 			</form>
-		</div>
+<!--			<h3>Status Log</h3>
+			<div id="debug-log" class="mc4wp-log widefat"
+				 style="height: 212px; width: 1100px; font-family: monaco,monospace,courier,'courier new','Bitstream Vera Sans Mono'; font-size: 13px; resize: vertical; line-height: 140%; padding: 6px; background: #262626; color: #fff">
+				<?php
+/*				$log_reader = new MC4WP_Debug_Log_Reader( '/var/www/html/wp-content/import.log' );
+				$line = $log_reader->read_as_html();
+
+				if (!empty($line)) {
+					while (is_string($line)) {
+						echo '<div class="debug-log-line">' . $line . '</div>';
+						$line = $log_reader->read_as_html();
+					}
+				} else {
+					echo '<div class="debug-log-empty">';
+					echo '-- ' . __('Nothing here.', 'import-clubtec');
+					echo '</div>';
+				}
+				*/?>
+			</div>
+-->		</div>
 
 	</div>
 	<script type="text/javascript">
