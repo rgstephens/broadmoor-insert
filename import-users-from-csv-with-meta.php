@@ -437,8 +437,8 @@ function acui_extra_user_profile_fields( $user ) {
 		"Home Fax" => "home_fax",
 		"Company" => "company",
 		"Job Title" => "job_title",
-		"Work Address" => "work_addr",
-		"Work Address 2" => "work_addr2",
+		"Work Address" => "work_address",
+		"Work Address 2" => "work_address_2",
 		"Work City" => "work_city",
 		"Work State" => "work_state",
 		"Work Zip" => "work_zip",
@@ -453,7 +453,7 @@ function acui_extra_user_profile_fields( $user ) {
 	//error_log(print_r($headers, true));
 	if( is_array($headers) && !empty($headers) ):
 ?>
-	<h3>Extra profile information (v1.51, Feb 9, 2017)</h3>
+	<h3>Extra profile information (v1.6, Mar 11, 2017)</h3>
 	
 	<table class="form-table"><?php
 

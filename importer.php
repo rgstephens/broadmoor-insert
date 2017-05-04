@@ -360,6 +360,7 @@ function type_to_role($clubtec_type) {
 		case 'Senior':
 		case 'Under':
 		case 'W.':
+		case 'Non-Resident':
 		case 'Women':
 			return 'Member';
 			break;
@@ -371,10 +372,10 @@ function type_to_role($clubtec_type) {
 			return 'Homeowner';
 			break;
 		case 'Non-Owner':
-			return 'Non-Owner';
+			return 'non-owner';
 			break;
 		case 'Renters':
-			return 'Renters';
+			return 'renters';
 		    break;
 	}
 }
@@ -425,6 +426,23 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 	$tokens = explode(" ", $clubtec_type);
 	//error_log(print_r("type_to_list: " . $clubtec_type . " token: " . $tokens[0] . ", gender: " . $gender, true));
 	switch ($tokens[0]) {
+		case 'Adv.':
+			if ($gender == 'F') {
+				update_user_meta($user_id, "men_golfing", "False");
+				update_user_meta($user_id, "women_golfing", "True");
+			} else {
+				update_user_meta($user_id, "men_golfing", "True");
+				update_user_meta($user_id, "women_golfing", "False");
+			}
+			update_user_meta($user_id, "all_homeowner", "False");
+			update_user_meta($user_id, "all_golf_club", "True");
+			update_user_meta($user_id, "employee", "False");
+			update_user_meta($user_id, "under_40", "False");
+			update_user_meta($user_id, "guest", "False");
+			update_user_meta($user_id, "adv_intermediate", "True");
+			update_user_meta($user_id, "opt_in_bha", "False");
+			update_user_meta($user_id, "opt_in_bgc", "True");
+			break;
 		case '30-34':
 		case '35':
 		case 'Under':
@@ -440,10 +458,10 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "employee", "False");
 			update_user_meta($user_id, "under_40", "True");
 			update_user_meta($user_id, "guest", "False");
-			update_user_meta($user_id, "junior", "False");
 			update_user_meta($user_id, "adv_intermediate", "False");
 			update_user_meta($user_id, "opt_in_bha", "False");
 			update_user_meta($user_id, "opt_in_bgc", "True");
+			break;
 		case 'Honorary':
 		case 'Lifetime':
 		case 'Social':
@@ -453,13 +471,13 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 		case 'New':
 		case 'Senior':
 		case 'W.':
+		case 'Non-Resident':
 		case 'Women':
 			update_user_meta($user_id, "all_golf_club", "True"); // All Golf Club
 			update_user_meta($user_id, "all_homeowner", "False");
 			update_user_meta($user_id, "employee", "False");
 			update_user_meta($user_id, "under_40", "False");
 			update_user_meta($user_id, "guest", "False");
-			update_user_meta($user_id, "junior", "False");
 			update_user_meta($user_id, "adv_intermediate", "False");
 			update_user_meta($user_id, "opt_in_bha", "False");
 			update_user_meta($user_id, "opt_in_bgc", "True");  // Get the newsletter
@@ -498,7 +516,6 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "employee", "True");
 			update_user_meta($user_id, "under_40", "False");
 			update_user_meta($user_id, "guest", "False");
-			update_user_meta($user_id, "junior", "False");
 			update_user_meta($user_id, "adv_intermediate", "False");
 			update_user_meta($user_id, "opt_in_bha", "False");
 			update_user_meta($user_id, "opt_in_bgc", "False");
@@ -516,12 +533,10 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "employee", "False");
 			update_user_meta($user_id, "under_40", "False");
 			update_user_meta($user_id, "guest", "False");
-			update_user_meta($user_id, "junior", "False");
 			update_user_meta($user_id, "adv_intermediate", "False");
 			update_user_meta($user_id, "opt_in_bha", "True");
 			update_user_meta($user_id, "opt_in_bgc", "False");
 			break;
-		case 'Non-Resident':
 		case 'Non-Owner':
 			update_user_meta($user_id, "all_resident", "True");
 			update_user_meta($user_id, "all_homeowner", "False");
@@ -533,7 +548,6 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "employee", "False");
 			update_user_meta($user_id, "under_40", "False");
 			update_user_meta($user_id, "guest", "False");
-			update_user_meta($user_id, "junior", "False");
 			update_user_meta($user_id, "adv_intermediate", "False");
 			update_user_meta($user_id, "opt_in_bha", "True");
 			update_user_meta($user_id, "opt_in_bgc", "False");
@@ -550,7 +564,6 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 			update_user_meta($user_id, "employee", "False");
 			update_user_meta($user_id, "under_40", "False");
 			update_user_meta($user_id, "guest", "False");
-			update_user_meta($user_id, "junior", "False");
 			update_user_meta($user_id, "adv_intermediate", "False");
 			update_user_meta($user_id, "opt_in_bha", "True");
 			update_user_meta($user_id, "opt_in_bgc", "False");
@@ -562,7 +575,7 @@ function type_to_list($user_id, $clubtec_type, $gender, $relationship)
 function grp_name_to_list($user_id, $grp_name, $clubtec_type)
 {
 	error_log(print_r("grp_name_to_list, grp_name: " . $grp_name, true));
-	update_user_meta($user_id, "men_golfing", "False");
+/*	update_user_meta($user_id, "men_golfing", "False");
 	update_user_meta($user_id, "women_golfing", "False");
 	update_user_meta($user_id, "all_resident", "False");
 	update_user_meta($user_id, "all_homeowner", "False");
@@ -575,7 +588,7 @@ function grp_name_to_list($user_id, $grp_name, $clubtec_type)
 	update_user_meta($user_id, "junior", "False");
 	update_user_meta($user_id, "adv_intermediate", "False");
 	update_user_meta($user_id, "opt_in_bha", "False");
-	update_user_meta($user_id, "opt_in_bgc", "False");
+	update_user_meta($user_id, "opt_in_bgc", "False");*/
 
 	$tokens = explode(",", $grp_name);
 	while (list ($key, $val) = each ($tokens) ) {
@@ -993,6 +1006,13 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 					else
 						$password = $data[ $password_position ];
 
+					// skip employee
+					if ($data[7] == 'Employee') {
+						$row++;
+						error_log(print_r("skipping employee: " . $data[2] . " " . $data[3], true));
+						continue;
+					}
+
 					// skip children
 					if ($data[5] == '3' && !$email) {
 						$row++;
@@ -1393,14 +1413,19 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 												break;
 											case "usr_address_a":
 											case "BusinessAddress1":
+											    delete_user_meta($user_id, "work_Address");
+												delete_user_meta($user_id, "work_Address 2");
+												delete_user_meta($user_id, "work_State");
 												update_user_meta($user_id, "work_address", $data[$i]);
 												break;
 											case "usr_address2_a":
 											case "BusinessAddress2":
-												update_user_meta($user_id, "work_address 2", $data[$i]);
+												delete_user_meta($user_id, "work_Address 2");
+												update_user_meta($user_id, "work_address_2", $data[$i]);
 												break;
 											case "usr_state_a":
 											case "BusinessState":
+												delete_user_meta($user_id, "work_State");
 												update_user_meta($user_id, "work_state", $data[$i]);
 												break;
 											case "usr_city_a":
@@ -1552,7 +1577,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			// Preview - check for deletes
 			//*********************************************
 			// Create array of member_numbers in WordPress DB
-			$wp_member_numbers = [];
+/*			$wp_member_numbers = [];
 			$all_users = get_users(array('fields' => array('ID')));
 			foreach ($all_users as &$value) {
 				$meta = get_user_meta($value->ID, 'membership_number');
@@ -1587,7 +1612,7 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 			}
 
 			if( $attach_id != 0 )
-				wp_delete_attachment( $attach_id );
+				wp_delete_attachment( $attach_id );*/
 
 			// delete all users that have not been imported
 /*			if( $is_cron && get_option( "acui_cron_delete_users" ) ):
@@ -1698,7 +1723,7 @@ function acui_options()
 		<?php endif; ?>	
 
 		<div style="float:left; width:80%;">
-			<h2><?php _e( 'Import users from ClubTec CSV (v2.01, Mar 9, 2017)','import-users-from-csv-with-meta' ); ?></h2>
+			<h2><?php _e( 'Import users from ClubTec CSV (v2.08, Apr 5, 2017)','import-users-from-csv-with-meta' ); ?></h2>
 		</div>
 
 		<div style="clear:both;"></div>
