@@ -1043,8 +1043,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 							continue;
 						}
 						$all_user_meta = get_user_meta( $user_id );
-						if( $password !== "" )
-							wp_set_password( $password, $user_id );
+						//if( $password !== "" )
+						//	wp_set_password( $password, $user_id );
 						$created = false;
 					}
 					elseif( !empty( $id ) ){ // if user have used id

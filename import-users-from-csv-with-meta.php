@@ -453,7 +453,7 @@ function acui_extra_user_profile_fields( $user ) {
 	//error_log(print_r($headers, true));
 	if( is_array($headers) && !empty($headers) ):
 ?>
-	<h3>Extra profile information (v1.6, Mar 11, 2017)</h3>
+	<h3>Extra profile information (v1.7, May 4, 2017)</h3>
 	
 	<table class="form-table"><?php
 
@@ -465,10 +465,16 @@ function acui_extra_user_profile_fields( $user ) {
 		{
 			continue;
 		}
+		if ($column == 'opt_in_bha' && strpos($_SERVER['SERVER_NAME'], 'golf')) {
+			continue;
+		}
+		if ($column == 'opt_in_bgc' && strpos($_SERVER['SERVER_NAME'], 'home')) {
+			continue;
+		}
 		//error_log(print_r("$column get_the_author_meta: " . get_the_author_meta($column, $user->ID ), true));
 	?>
 		<tr>
-			<th><label for="<?php echo $column; ?>"><?php echo $column; ?></label></th>
+			<th><label for="<?php echo $column; ?>"><?php if ($column == 'opt_in_bgc') { echo 'Opt in Newsletter'; } else if ($column == 'opt_in_bha')  { echo 'Opt in Newsletter'; } else { echo $column; } ?></label></th>
 			<td><input type="<?php if (esc_attr(get_the_author_meta($column, $user->ID )) == 'True' || esc_attr(get_the_author_meta($column, $user->ID )) == 'False') { echo 'checkbox'; }  else { echo 'text'; } ?>" name="<?php echo $column; ?>" id="<?php echo $column; ?>" <?php if (esc_attr(get_the_author_meta($column, $user->ID )) == 'True') { echo 'checked="' . esc_attr(get_the_author_meta($column, $user->ID )) . '"'; } else if (esc_attr(get_the_author_meta($column, $user->ID )) == 'False') { echo ''; } else echo 'value="' . esc_attr(get_the_author_meta($column, $user->ID )) . '"'; ?> class="regular-text" /></td>
 		</tr>
 		<?php

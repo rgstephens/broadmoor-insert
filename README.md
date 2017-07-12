@@ -32,7 +32,10 @@ Wordpress field names are defined [here](https://codex.wordpress.org/Function_Re
 - **wp_update_user** -  Updates multiple pieces of user data but not custom metadata & send ***password change email***
 - **update_user_meta** - Updates a single piece of user metadata
 - **delete_user_meta** - 
-- **wp_set_password** -
+- **wp_set_password** - 
+  - User update when password is in import file
+  - Id was supplied on insert and password is in import file
+  - username exists and password is in import file
 - **do_action**('lostpassword_post')
 - **wp_mail**( $email, $subject, $body_mail ) - send email
 
