@@ -453,7 +453,7 @@ function acui_extra_user_profile_fields( $user ) {
 	//error_log(print_r($headers, true));
 	if( is_array($headers) && !empty($headers) ):
 ?>
-	<h3>Extra profile information (v1.7, May 4, 2017)</h3>
+	<h3>Extra profile information (v1.8, July 14, 2017) <?php if (strpos($_SERVER['SERVER_NAME'], 'golf')) { echo 'golf'; } else { echo 'home'; }?></h3>
 	
 	<table class="form-table"><?php
 

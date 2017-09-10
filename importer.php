@@ -372,10 +372,10 @@ function type_to_role($clubtec_type) {
 			return 'Homeowner';
 			break;
 		case 'Non-Owner':
-			return 'non-owner';
+			return 'Non-Owner';
 			break;
 		case 'Renters':
-			return 'renters';
+			return 'Renters';
 		    break;
 	}
 }
@@ -1139,8 +1139,8 @@ function acui_import_users( $file, $form_data, $attach_id = 0, $is_cron = false 
 					}
 					else{
 						error_log(print_r("email & username not found, memberNum: " . $data[1] . ", email: " . $email . ", username: " . $username, true));
-						error_log(print_r("username exists: " . username_exists($username), true));
-						error_log(print_r("email exists: " . email_exists( $email ), true));
+						//error_log(print_r("username exists: " . username_exists($username), true));
+						//error_log(print_r("email exists: " . email_exists( $email ), true));
 
 						//*********************************************
 						// This is where the new user create happens
@@ -1723,7 +1723,7 @@ function acui_options()
 		<?php endif; ?>	
 
 		<div style="float:left; width:80%;">
-			<h2><?php _e( 'Import users from ClubTec CSV (v2.08, Apr 5, 2017)','import-users-from-csv-with-meta' ); ?></h2>
+			<h2><?php _e( 'Import users from ClubTec CSV (v2.07, Mar 29, 2017)','import-users-from-csv-with-meta' ); ?></h2>
 		</div>
 
 		<div style="clear:both;"></div>
