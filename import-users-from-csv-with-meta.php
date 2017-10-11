@@ -17,8 +17,8 @@ $wp_min_fields = array("Username", "Email");
 $show_meta_fields_admin = array("mobile_phone", "gender", "clubtec_account_type", "title", "birthday", "relationship", "home_phone", "work_phone",
 	"home_address", "home_address_2", "home_city", "home_state", "home_aip", "home_fax", "home_email", "business_email", "corr_email",
 	"company", "job_title", "work_address", "work_address_2", "work_city", "work_zip", "work_fax",
-	"clubtec_login_count", "family_id", "groups", "opt_in_bgc", "opt_in_bha");
-$checkbox_fields = array("opt_in_bgc", "opt_in_bha", "all_golf_club", "men_golfing", "women_golfing", "under_40", "junior", "adv_intermediate", "all_resident", "all_homeowner", "non_owner", "renter", "employee", "guest");
+	"clubtec_login_count", "family_id", "groups", "opt_in_bgc", "opt_in_bha", "course_updates");
+$checkbox_fields = array("opt_in_bgc", "opt_in_bha", "course_updates", "all_golf_club", "men_golfing", "women_golfing", "under_40", "junior", "adv_intermediate", "all_resident", "all_homeowner", "non_owner", "renter", "employee", "guest");
 /*$show_meta_fields_admin = array("Mobile Phone", "Gender", "ClubTec Account Type", "Title", "Birthday", "Phone (Primary)", "Home Phone", "Work Phone",
 	"Home Address", "Home Address 2", "Home City", "Home State", "Home Zip", "Home Fax",
 	"Company", "Job Title", "Work Address", "Work Address 2", "Work City", "Work Zip", "Work Fax",
@@ -453,7 +453,7 @@ function acui_extra_user_profile_fields( $user ) {
 	//error_log(print_r($headers, true));
 	if( is_array($headers) && !empty($headers) ):
 ?>
-	<h3>Extra profile information (v1.8, July 14, 2017) <?php if (strpos($_SERVER['SERVER_NAME'], 'golf')) { echo 'golf'; } else { echo 'home'; }?></h3>
+	<h3>Extra profile information (v1.7, May 4, 2017) <?php if (strpos($_SERVER['SERVER_NAME'], 'golf')) { echo 'golf'; } else { echo 'home'; }?></h3>
 	
 	<table class="form-table"><?php
 
